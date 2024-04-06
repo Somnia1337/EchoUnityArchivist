@@ -6,6 +6,6 @@ A sketchy email user agent, following the requirements of project #2 in Computer
 
 # Course Project Requirements
 
-- Users can download emails from their email box through the agent.
+- (given up) ~~Users can download emails from their email box through the agent.~~
 - Users can send their emails through the agent.
 - The agent can access at least 2 real email servers.
