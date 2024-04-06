@@ -5,68 +5,89 @@ use lettre::{
 use lettre::{Message, SmtpTransport, Transport};
 use std::io::{self, Write};
 
+/// Represents an email user.
 pub struct User {
-    host: String,
+    server: String,
     username: String,
-    auth_code: String,
+    password: String,
 }
 
 impl User {
+    /// Constructs a new `User` from user input.
     pub fn build() -> User {
-        let host = read_input("host: ");
-        let username = read_input("username: ");
-        let auth_code = read_input("authorization code: ");
+        // Get user input from command line
+        let server = read_input("SMTP server: ");
+        let username = read_input("Username: ");
+        let password = read_input("SMTP password: ");
 
         User {
-            host,
+            server,
             username,
-            auth_code,
+            password,
         }
     }
 
-    pub fn connect_smtp(&self) -> Result<(SmtpTransport, bool), Error> {
-        let creds = self.get_creds();
-
-        // Open a remote connection to host
-        let sender = SmtpTransport::relay(self.get_host().as_str())
+    /// Connects to the server with user's credentials.
+    ///
+    /// # Returns
+    ///
+    /// A `SmtpTransport` if succeeds, or an `Err` if fails.
+    pub fn connect_smtp(&self) -> Result<SmtpTransport, Error> {
+        // Open a remote connection to server
+        let sender = SmtpTransport::relay(self.server.clone().as_str())
             .unwrap()
-            .credentials(Credentials::new(creds.0, creds.1))
+            .credentials(Credentials::new(
+                self.username.clone(),
+                self.password.clone(),
+            ))
             .build();
 
         // Connectivity test & return
         match sender.test_connection() {
-            Ok(b) => Ok((sender, b)),
+            Ok(_) => Ok(sender),
             Err(e) => Err(Error::from(e)),
         }
     }
 
-    pub fn get_host(&self) -> String {
-        self.host.clone()
-    }
+    /// Sends an email within user input.
+    ///
+    /// # Returns
+    ///
+    /// A `String` containing the receiver's email address if succeeds, or an `Error` if fails.
+    pub fn send(&self, sender: &SmtpTransport) -> Result<String, Error> {
+        // Read & save `to` for returning
+        let to = read_input("To: ");
 
-    pub fn get_creds(&self) -> (String, String) {
-        (self.username.clone(), self.auth_code.clone())
+        // Build the email
+        let email = Message::builder()
+            .from(self.username.clone().parse().unwrap())
+            .to(to.parse().unwrap())
+            .subject(read_input("Subject: "))
+            .header(ContentType::TEXT_PLAIN)
+            .body(read_body())
+            .unwrap();
+
+        // Reconfirm
+        let confirmation = read_input(
+            "\
+> Seems that you've finished editing,
+  if everything looks fine,
+  enter \"yes\" to confirm sending: ",
+        );
+        if confirmation.trim() != "yes" {
+            println!("> Sending canceled.");
+            return Ok(String::new());
+        }
+
+        // Send the email
+        match sender.send(&email) {
+            Ok(_) => Ok(to),
+            Err(e) => Err(Error::from(e)),
+        }
     }
 }
 
-pub fn send(user: &User, sender: &SmtpTransport) -> Result<String, Error> {
-    let to = read_input("To: ");
-
-    let email = Message::builder()
-        .from(user.get_creds().0.parse().unwrap())
-        .to(to.parse().unwrap())
-        .subject(read_input("Subject: "))
-        .header(ContentType::TEXT_PLAIN)
-        .body(read_body())
-        .unwrap();
-
-    // Send the email
-    match sender.send(&email) {
-        Ok(_) => Ok(to),
-        Err(e) => Err(Error::from(e)),
-    }
-}
-
+/// Reads user input from command line, with customized prompt.
 pub fn read_input(prompt: &str) -> String {
     print!("{}", prompt);
     io::stdout().flush().expect("failed to flush stdout");
@@ -79,12 +100,13 @@ pub fn read_input(prompt: &str) -> String {
     input.trim().to_owned()
 }
 
+/// Reads the email's body from user input, until 2 consecutive "Enter"s are met.
 pub fn read_body() -> String {
-    print!("Body: ");
+    print!("Body (press 2 \"Enter\"s in a row to finish): ");
     let mut body = String::new();
     io::stdout().flush().expect("failed to flush stdout");
 
-    let mut cnt = 0;
+    let mut cnt = 0; // Counter for consecutive empty lines
     loop {
         let mut buf = String::new();
         io::stdin()
