@@ -23,9 +23,9 @@ impl User {
     /// Constructs a new `User` from user input.
     pub fn build() -> User {
         // Get user input from command line
-        let domain = read_input("  Server domain (eg. \"qq.com\" without header): ");
+        let domain = Self::sanitize_domain(&read_input("  Server domain (eg. \"smtp.qq.com\"): "));
         let email = read_input("  Email: ");
-        let password = read_input("  Password (eg. \"jfoaiwnpsej\" SMTP/IMAP password): ");
+        let password = read_input("  Password (SMTP/IMAP password, eg. \"jfoaiwnpsej\"): ");
 
         User {
             smtp_domain: format!("smtp.{}", domain),
@@ -39,7 +39,8 @@ impl User {
     ///
     /// # Returns
     ///
-    /// A `SmtpTransport` if succeeds, or an `Err` if fails.
+    /// - An `SmtpTransport` the connection succeeds.
+    /// - An `Err` if the connection fails.
     pub fn connect_smtp(&self) -> Result<SmtpTransport, Error> {
         // Open a remote connection to server
         let sender = SmtpTransport::relay(self.smtp_domain.as_str())
@@ -54,7 +55,13 @@ impl User {
         }
     }
 
-    pub fn connect_imap(&self) -> Result<Session<TlsStream<TcpStream>>, imap::error::Error> {
+    /// Connects to the IMAP server with the user's credentials.
+    ///
+    /// # Returns
+    ///
+    /// - A `Session<TlsStream<TcpStream>>` if the connection succeeds.
+    /// - An `Err` if the connection fails.
+    pub fn connect_imap(&self) -> imap::error::Result<Session<TlsStream<TcpStream>>> {
         let domain = self.imap_domain.as_str();
         let tls = TlsConnector::builder().build().unwrap();
 
@@ -70,9 +77,11 @@ impl User {
     ///
     /// # Returns
     ///
-    /// A `String` containing the receiver's email address if succeeds, or an `Error` if fails.
+    /// - A `String` containing the receiver's email address if the process succeeds.
+    /// - An `Error` if the process fails.
     pub fn send_email(&self, smtp_cli: &SmtpTransport) -> Result<String, Error> {
-        println!("> Editing email:");
+        println!("> New draft:");
+        println!("  -------------------------------------");
 
         // Read & save `to` for returning
         let to = read_input("  To: ");
@@ -85,11 +94,12 @@ impl User {
             .header(ContentType::TEXT_PLAIN)
             .body(read_body())
             .unwrap();
+        println!("  -------------------------------------");
 
         // Reconfirm
         let confirmation = read_input(
             "\
-> Seems that you've finished editing,
+> You have finished editing,
   if everything looks fine,
   enter \"yes\" to confirm sending: ",
         );
@@ -106,10 +116,17 @@ impl User {
         }
     }
 
-    pub fn read_email(
+    /// Fetches an email from a specific inbox on the imap server.
+    ///
+    /// # Returns
+    ///
+    /// - An `Option<String>` containing the email's body if the process succeeds.
+    /// - An `Err` if the process fails.
+    pub fn fetch_email(
         &self,
         imap_cli: &mut Session<TlsStream<TcpStream>>,
     ) -> imap::error::Result<Option<String>> {
+        println!("> Fetching inboxes...");
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
             .into_iter()
@@ -118,22 +135,14 @@ impl User {
             .collect::<Vec<String>>();
         let size = inboxes.len();
 
-        println!("> Inboxes you can choose from:");
         for (i, inbox) in inboxes.iter().enumerate() {
             println!("  [{}] {}", i + 1, inbox);
         }
-        let input = read_input("  Choose an inbox: ");
+        let input = read_input("  Select an inbox: ");
         let mut inbox: usize = match input.trim().parse().ok() {
-            Some(x) => {
-                if x >= 1 && x <= size {
-                    x
-                } else {
-                    println!("> Invalid inbox id.");
-                    return Ok(None);
-                }
-            }
-            None => {
-                println!("> Invalid input.");
+            Some(x) if x >= 1 && x <= size => x,
+            _ => {
+                println!("> Invalid input: should be in between 1 and {}.", size);
                 return Ok(None);
             }
         };
@@ -143,7 +152,7 @@ impl User {
         let message = if let Some(m) = messages.iter().next() {
             m
         } else {
-            println!("> No messages in {}", inboxes[inbox]);
+            println!("> No messages in \"{}\"", inboxes[inbox]);
             return Ok(None);
         };
 
@@ -153,6 +162,16 @@ impl User {
             .to_string();
 
         Ok(Some(body))
+    }
+
+    /// Sanitizes the domain name from user input, removes prefixing "smtp." or "imap.".
+    fn sanitize_domain(input: &str) -> String {
+        if let Some(domain) = input.strip_prefix("smtp.") {
+            return domain.to_string();
+        } else if let Some(domain) = input.strip_prefix("imap.") {
+            return domain.to_string();
+        }
+        input.to_string()
     }
 }
 
@@ -169,9 +188,9 @@ pub fn read_input(prompt: &str) -> String {
     input.trim().to_owned()
 }
 
-/// Reads the email's body from user input, until 2 consecutive "Enter"s are met.
+/// Reads the email's body from user input, until 2 consecutive \`Enter\`s are met.
 pub fn read_body() -> String {
-    println!("  Body (press 2 \"Enter\"s in a row to finish):");
+    println!("  Body (press 2 `Enter`s in a row to finish):");
     let mut body = String::new();
     io::stdout().flush().expect("failed to flush stdout");
 
