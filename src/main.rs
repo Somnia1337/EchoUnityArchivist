@@ -2,16 +2,21 @@ use echo_unity_archivist::*;
 
 fn main() {
     // Build `User` and login
-    println!("You must login before interacting with the server.");
+    println!("> Logging in is required before interacting with the SMTP/IMAP server.");
     let user = User::build();
-    let sender = match user.connect_smtp() {
-        Ok(res) => {
-            println!("> Connected to SMTP server.");
-            res
+    let smtp_cli = match user.connect_smtp() {
+        Ok(transport) => {
+            println!("> Connected to {}.", user.smtp_domain);
+            transport
         }
-        Err(e) => {
-            panic!("> Failed connecting to SMTP server: {:?}", e)
+        Err(e) => panic!("> Failed connecting to SMTP server: {:?}", e),
+    };
+    let mut imap_cli = match user.connect_imap() {
+        Ok(session) => {
+            println!("> Connected to {}.", user.imap_domain);
+            session
         }
+        Err(e) => panic!("> Failed connecting to IMAP server: {:?}", e),
     };
 
     // User can perform several actions before quitting
@@ -22,34 +27,56 @@ fn main() {
         loop {
             let input = read_input(
                 "\
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: ",
+> Actions:
+  0 Logout & quit
+  1 Send an email
+  2 Read an email
+  Choose one: ",
             );
             act = input.trim().parse().ok();
             match act {
-                Some(0) | Some(1) => break,
-                _ => println!("> Invalid input: must be an integer in [0,1]"),
+                Some(0..=2) => break,
+                _ => println!("> Invalid input: must be an integer in [0,2]"),
             }
         }
 
         // Perform the action
         match act.unwrap() {
-            0 => {
-                println!("> Quitting user agent...");
-                break;
-            }
+            0 => break,
             1 => {
-                match user.send(&sender) {
+                match user.send_email(&smtp_cli) {
                     Ok(recv) if !recv.is_empty() => {
-                        println!("> Email sent to {} successfully!", recv)
+                        println!("> Email sent to {} successfully.", recv)
                     }
                     Err(e) => println!("> Could not send email: {:?}", e),
                     _ => {}
                 };
             }
-            _ => unreachable!(), // `_` to satisfy the compiler
+            2 => match user.read_email(&mut imap_cli) {
+                Ok(option) => match option {
+                    None => {}
+                    Some(email) => {
+                        println!("> Email fetched:");
+                        println!("-------------------------------------");
+                        let mut real_body = false;
+                        for line in email.lines().into_iter() {
+                            if line.starts_with("From: ") {
+                                real_body = true;
+                            }
+                            if real_body && !line.starts_with("Content") {
+                                println!("{}", line);
+                            }
+                        }
+                        println!("-------------------------------------");
+                    }
+                },
+                Err(e) => println!("> Could not read email: {:?}", e),
+            },
+            _ => unreachable!(), // only to satisfy the compiler
         }
     }
+
+    println!("> Logging out from {}...", user.imap_domain);
+    imap_cli.logout().unwrap();
+    println!("> Quitting user agent...");
 }
