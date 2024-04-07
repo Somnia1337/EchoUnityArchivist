@@ -8,7 +8,7 @@ use std::io::{self, Write};
 /// Represents an email user.
 pub struct User {
     server: String,
-    username: String,
+    email: String,
     password: String,
 }
 
@@ -17,12 +17,12 @@ impl User {
     pub fn build() -> User {
         // Get user input from command line
         let server = read_input("SMTP server: ");
-        let username = read_input("Username: ");
+        let email = read_input("Email: ");
         let password = read_input("SMTP password: ");
 
         User {
             server,
-            username,
+            email,
             password,
         }
     }
@@ -36,10 +36,7 @@ impl User {
         // Open a remote connection to server
         let sender = SmtpTransport::relay(self.server.clone().as_str())
             .unwrap()
-            .credentials(Credentials::new(
-                self.username.clone(),
-                self.password.clone(),
-            ))
+            .credentials(Credentials::new(self.email.clone(), self.password.clone()))
             .build();
 
         // Connectivity test & return
@@ -60,7 +57,7 @@ impl User {
 
         // Build the email
         let email = Message::builder()
-            .from(self.username.clone().parse().unwrap())
+            .from(self.email.clone().parse().unwrap())
             .to(to.parse().unwrap())
             .subject(read_input("Subject: "))
             .header(ContentType::TEXT_PLAIN)
