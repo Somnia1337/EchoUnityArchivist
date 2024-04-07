@@ -25,7 +25,7 @@ It would ask you to login, here's an example:
 ```text
 You must login before interacting with the server.
 SMTP server: smtp.gmail.com (your target SMTP server)
-Username: amy2233@gmail.com (your corresponding email address)
+Email: amy2233@gmail.com (your corresponding email address)
 SMTP password: jfoiasnelmcpox (something like this, google "gmail smtp password" for help)
 ```
 
@@ -78,7 +78,7 @@ cargo run
 ```text
 You must login before interacting with the server.
 SMTP server: smtp.gmail.com
-Username: amy2233@gmail.com
+Email: amy2233@gmail.com
 SMTP password: jfoiasnelmcpox
 > Connected to SMTP server.
 > Options:

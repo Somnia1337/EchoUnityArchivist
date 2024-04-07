@@ -25,7 +25,7 @@ cargo run
 ```text
 You must login before interacting with the server.
 SMTP server: smtp.gmail.com (你的目标 SMTP 服务器)
-Username: amy2233@gmail.com (你相应的邮箱地址)
+Email: amy2233@gmail.com (你相应的邮箱地址)
 SMTP password: jfoiasnelmcpox (类似这样的一串，搜索 “邮箱授权码”)
 ```
 
@@ -78,7 +78,7 @@ cargo run
 ```text
 You must login before interacting with the server.
 SMTP server: smtp.gmail.com
-Username: amy2233@gmail.com
+Email: amy2233@gmail.com
 SMTP password: jfoiasnelmcpox
 > Connected to SMTP server.
 > Options:
