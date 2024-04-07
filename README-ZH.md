@@ -23,20 +23,22 @@ cargo run
 它会请你登录，例如：
 
 ```text
-You must login before interacting with the server.
-SMTP server: smtp.gmail.com (你的目标 SMTP 服务器)
-Email: amy2233@gmail.com (你相应的邮箱地址)
-SMTP password: jfoiasnelmcpox (类似这样的一串，搜索 “邮箱授权码”)
+> Logging in is required before interacting with the SMTP/IMAP server.
+  Server domain (eg. "smtp.qq.com"): smtp.gmail.com (你的目标 SMTP 服务器)
+  Email: amy1024@gmail.com (你相应的邮箱地址)
+  Password (SMTP/IMAP password, eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx (类似这样的一串，搜索 “邮箱授权码” 获取更多帮助)
 ```
 
 如果一切正常，用户代理将连接到你的服务器，并请你指定一个操作：
 
 ```text
-> Connected to SMTP server.
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 1 (输入你想执行的操作标号)
+> Connected to smtp.gmail.com.
+> Connected to imap.gmail.com.
+> Actions:
+  0 Logout & quit
+  1 Send email
+  2 Fetch email
+  Select an action: 2 (输入你想执行的操作标号)
 ```
 
 ## 发送邮件
@@ -44,21 +46,23 @@ Select an option: 1 (输入你想执行的操作标号)
 输入 “1” 以发送邮件，然后用户代理会请你输入一些细节：
 
 ```text
-Select an option: 1
-To: bob1479@qq.com (收件人的地址)
-Subject: Hi! (主题)
-Body (press 2 "Enter"s in a row to finish): (输入邮件正文)
-(更多)
-(的行)
-(...)
+  Select an action: 1
+> New draft:
+  -------------------------------------
+  To: bob2048@gmail.com (收件人的地址)
+  Subject: Hi from Amy! (主题)
+  Body (press 2 `Enter`s in a row to finish):
+  Hi Bob!
+  Nice 2 c u 2!
 
 
+  -------------------------------------
 ```
 
-当你编辑完 `Body`(正文) 后，连续按下 “Enter” 键 2 次以告诉用户代理，然后它会请你确认一切无误：
+当你编辑完 `Body`(正文) 后，连续按下 `Enter` 键 2 次以告诉用户代理，然后它会请你确认一切无误：
 
 ```text
-> Seems that you've finished editing,
+> You have finished editing,
   if everything looks fine,
   enter "yes" to confirm sending: yes (只有输入 “yes” 才执行发送)
 ```
@@ -66,7 +70,38 @@ Body (press 2 "Enter"s in a row to finish): (输入邮件正文)
 如果发送成功，用户代理将打印一条消息：
 
 ```text
-> Email sent to bob1479@qq.com successfully!
+> Email sent to bob2048@gmail.com successfully!
+```
+
+## 收取邮件
+
+输入 “2” 以收取邮件，然后用户代理会请你选择一个收信箱：
+
+```text
+> Fetching inboxes...
+  [1] INBOX
+  [2] Sent Messages
+  [3] Drafts
+  [4] Deleted Messages
+  [5] Junk
+  Select an inbox:
+```
+
+选择一个之后，用户代理将检查其中是否有邮件，如果有就收取第一封：
+
+```text
+  Select an inbox: 1
+> Email fetched:
+  -------------------------------------
+  From: bob2048@gmail.com
+  To: amy1024@gmail.com
+  Subject: Hi from Bob!
+  Date: Sun, 07 Apr 2024 09:09:27 +0000
+  
+  Hi Amy!
+  Nice 2 c u!
+  
+  -------------------------------------
 ```
 
 ## 一个完整示例
@@ -76,42 +111,80 @@ cargo run
 ```
 
 ```text
-You must login before interacting with the server.
-SMTP server: smtp.gmail.com
-Email: amy2233@gmail.com
-SMTP password: jfoiasnelmcpox
-> Connected to SMTP server.
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 1
-To: bob1479@qq.com
-Subject: Not really sending this time
-Body (press 2 "Enter"s in a row to finish): you would not be reading these
-because I'm gonna enter "no" to cancel sending
+> Logging in is required before interacting with the SMTP/IMAP server.
+  Server domain (eg. "smtp.qq.com"): smtp.gmail.com
+  Email: amy1024@gmail.com
+  Password (SMTP/IMAP password, eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx
+> Connected to smtp.gmail.com.
+> Connected to imap.gmail.com.
+> Actions:
+  0 Logout & quit
+  1 Send email
+  2 Fetch email
+  Select an action: 2
+> Fetching inboxes...
+  [1] INBOX
+  [2] Sent Messages
+  [3] Drafts
+  [4] Deleted Messages
+  [5] Junk
+  Select an inbox: 1
+> Email fetched:
+  -------------------------------------
+  From: bob2048@gmail.com
+  To: amy1024@gmail.com
+  Subject: Hi from Bob!
+  Date: Sun, 07 Apr 2024 09:09:27 +0000
+  
+  Hi Amy!
+  Nice 2 c u!
+  
+  -------------------------------------
+> Actions:
+  0 Logout & quit
+  1 Send email
+  2 Fetch email
+  Select an action: 1
+> New draft:
+  -------------------------------------
+  To: bob2048@gmail.com
+  Subject: Hi from Amy!
+  Body (press 2 `Enter`s in a row to finish):
+  Hi Bob!
+  Nise 2 c u 2!
+  Oops, I made a typo...
 
 
-> Seems that you've finished editing,
+  -------------------------------------
+> You have finished editing,
   if everything looks fine,
   enter "yes" to confirm sending: no
 > Sending canceled.
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 1
-To: bob1479@qq.com
-Subject: Ok now it's a real one
-Body (press 2 "Enter"s in a row to finish): Hi there!
-Goodbye!
+> Actions:
+  0 Logout & quit
+  1 Send email
+  2 Fetch email
+  Select an action: 1
+> New draft:
+  -------------------------------------
+  To: bob2048@gmail.com
+  Subject: Hi from Amy!
+  Body (press 2 `Enter`s in a row to finish):
+  Hi Bob!
+  Nice 2 c u 2!
 
 
-> Seems that you've finished editing,
+  -------------------------------------
+> You have finished editing,
   if everything looks fine,
   enter "yes" to confirm sending: yes
-> Email sent to bob1479@qq.com successfully!
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 0
+> Sending...
+> Your email has been sent to bob2048@gmail.com.
+> Actions:
+  0 Logout & quit
+  1 Send email
+  2 Fetch email
+  Select an action: 0
+> Logging out from imap.gmail.com...
 > Quitting user agent...
 ```
