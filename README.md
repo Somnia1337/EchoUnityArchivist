@@ -8,7 +8,7 @@ A sketchy email user agent, following the requirements of project #2 in Computer
 
 # Course Project Requirements
 
-- (given up) ~~Users can download emails from their email box through the agent.~~
+- Users can download emails from their email box through the agent.
 - Users can send their emails through the agent.
 - The agent can access at least 2 real email servers.
 
@@ -76,42 +76,62 @@ cargo run
 ```
 
 ```text
-You must login before interacting with the server.
-SMTP server: smtp.gmail.com
-Email: amy2233@gmail.com
-SMTP password: jfoiasnelmcpox
-> Connected to SMTP server.
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 1
-To: bob1479@qq.com
-Subject: Not really sending this time
-Body (press 2 "Enter"s in a row to finish): you would not be reading these
-because I'm gonna enter "no" to cancel sending
-
-
-> Seems that you've finished editing,
-  if everything looks fine,
-  enter "yes" to confirm sending: no
-> Sending canceled.
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 1
-To: bob1479@qq.com
-Subject: Ok now it's a real one
-Body (press 2 "Enter"s in a row to finish): Hi there!
-Goodbye!
+> Logging in is required before interacting with the SMTP/IMAP server.
+  Server domain (eg. "qq.com" without header): qq.com
+  Email: 2581063732@qq.com
+  Password (eg. "jfoaiwnpsej" SMTP/IMAP password): jjdoevmqlzfcdidh
+> Connected to smtp.qq.com.
+> Connected to imap.qq.com.
+> Actions:
+  0 Logout & quit
+  1 Send an email
+  2 Read an email
+  Choose one: 1
+> Editing email:
+  To: 2581063732@qq.com
+  Subject: Real Final Test
+  Body (press 2 "Enter"s in a row to finish):
+  This
+  time,
+  it's    
+  real.
 
 
 > Seems that you've finished editing,
   if everything looks fine,
   enter "yes" to confirm sending: yes
-> Email sent to bob1479@qq.com successfully!
-> Options:
-> 0 Quit
-> 1 Send an email
-Select an option: 0
+> Sending...
+> Email sent to 2581063732@qq.com successfully.
+> Actions:
+  0 Logout & quit
+  1 Send an email
+  2 Read an email
+  Choose one: 2
+> Inboxes you can choose from:
+  [1] INBOX
+  [2] Sent Messages
+  [3] Drafts
+  [4] Deleted Messages
+  [5] Junk
+  Choose an inbox: 1
+> Email fetched:
+-------------------------------------
+From: 2581063732@qq.com
+To: 2581063732@qq.com
+Subject: Real Final Test
+Date: Sun, 07 Apr 2024 09:09:27 +0000
+
+This
+time,
+it's
+real.
+
+-------------------------------------
+> Actions:
+  0 Logout & quit
+  1 Send an email
+  2 Read an email
+  Choose one: 0
+> Logging out from imap.qq.com...
 > Quitting user agent...
 ```
