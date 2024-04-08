@@ -1,7 +1,8 @@
 use echo_unity_archivist::*;
 
 fn main() {
-    // Log in to both SMTP & IMAP servers
+    // Log in to SMTP & IMAP servers
+    // todo: allow user to try again in case of failure, instead of `panic!`
     println!("> Logging in is required before interacting with the SMTP/IMAP server.");
 
     let user = User::build();
@@ -33,7 +34,7 @@ fn main() {
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: ",
             );
             act = input.trim().parse().ok();
@@ -44,22 +45,21 @@ fn main() {
         }
 
         // Perform action
+        // todo: new threads for action handling
         match act.unwrap() {
             0 => break,
-            1 => {
-                match user.send_email(&smtp_cli) {
-                    Ok(recv) if !recv.is_empty() => {
-                        println!("> Your email has been sent to {}.", recv)
-                    }
-                    Err(e) => println!("> Could not send email: {:?}", e),
-                    _ => {}
-                };
-            }
+            1 => match user.send_email(&smtp_cli) {
+                Ok(recv) => match recv {
+                    None => println!("> Sending canceled."),
+                    Some(to) => println!("> Your email has been sent to {}.", to),
+                },
+                Err(e) => println!("> Could not send email: {:?}", e),
+            },
             2 => match user.fetch_email(&mut imap_cli) {
                 Ok(option) => match option {
                     None => {}
                     Some(email) => {
-                        println!("> Email fetched:");
+                        println!("> Message fetched:");
                         println!("  -------------------------------------");
                         let mut real_body_met = false;
                         for line in email.lines().into_iter() {

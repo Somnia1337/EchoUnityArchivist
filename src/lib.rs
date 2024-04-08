@@ -11,7 +11,7 @@ use std::{
     str,
 };
 
-/// Represents an email user.
+/// Represents a user.
 pub struct User {
     pub smtp_domain: String,
     pub imap_domain: String,
@@ -22,10 +22,10 @@ pub struct User {
 impl User {
     /// Constructs a new `User` from user input.
     pub fn build() -> User {
-        // Get user input from command line
+        // Read user input
         let domain = Self::sanitize_domain(&read_input("  Server domain (eg. \"smtp.qq.com\"): "));
-        let email = read_input("  Email: ");
-        let password = read_input("  Password (SMTP/IMAP password, eg. \"jfoaiwnpsej\"): ");
+        let email = read_input("  Email address: ");
+        let password = read_input("  SMTP/IMAP password (eg. \"jfoaiwnpsej\"): ");
 
         User {
             smtp_domain: format!("smtp.{}", domain),
@@ -39,18 +39,18 @@ impl User {
     ///
     /// # Returns
     ///
-    /// - An `SmtpTransport` the connection succeeds.
+    /// - An `SmtpTransport` if the connection succeeds.
     /// - An `Err` if the connection fails.
     pub fn connect_smtp(&self) -> Result<SmtpTransport, Error> {
         // Open a remote connection to server
-        let sender = SmtpTransport::relay(self.smtp_domain.as_str())
+        let smtp_cli = SmtpTransport::relay(self.smtp_domain.as_str())
             .unwrap()
             .credentials(Credentials::new(self.email.clone(), self.password.clone()))
             .build();
 
         // Connectivity test & return
-        match sender.test_connection() {
-            Ok(_) => Ok(sender),
+        match smtp_cli.test_connection() {
+            Ok(_) => Ok(smtp_cli),
             Err(e) => Err(Error::from(e)),
         }
     }
@@ -65,9 +65,9 @@ impl User {
         let domain = self.imap_domain.as_str();
         let tls = TlsConnector::builder().build().unwrap();
 
-        let client = imap::connect((domain, 993), domain, &tls).unwrap();
+        let imap_cli = imap::connect((domain, 993), domain, &tls).unwrap();
 
-        match client.login(self.email.clone(), self.password.clone()) {
+        match imap_cli.login(self.email.clone(), self.password.clone()) {
             Ok(session) => Ok(session),
             Err(e) => Err(e.0),
         }
@@ -77,9 +77,11 @@ impl User {
     ///
     /// # Returns
     ///
-    /// - A `String` containing the receiver's email address if the process succeeds.
-    /// - An `Error` if the process fails.
-    pub fn send_email(&self, smtp_cli: &SmtpTransport) -> Result<String, Error> {
+    /// - An `Option<String>` if the process succeeds.
+    ///     - A `Some` containing the receiver's email address if sending succeeds.
+    ///     - A `None` if the user cancels sending during reconfirmation.
+    /// - An `Error` if it fails.
+    pub fn send_email(&self, smtp_cli: &SmtpTransport) -> Result<Option<String>, Error> {
         println!("> New draft:");
         println!("  -------------------------------------");
 
@@ -104,14 +106,13 @@ impl User {
   enter \"yes\" to confirm sending: ",
         );
         if confirmation.trim().to_lowercase() != "yes" {
-            println!("> Sending canceled.");
-            return Ok(String::new());
+            return Ok(None);
         }
 
         // Send the email
         println!("> Sending...");
         match smtp_cli.send(&email) {
-            Ok(_) => Ok(to),
+            Ok(_) => Ok(Some(to)),
             Err(e) => Err(Error::from(e)),
         }
     }
@@ -120,24 +121,28 @@ impl User {
     ///
     /// # Returns
     ///
-    /// - An `Option<String>` containing the email's body if the process succeeds.
-    /// - An `Err` if the process fails.
+    /// - An `Option<String>` if the process succeeds.
+    ///     - A `Some` containing the email's body if an email exists.
+    ///     - A `None` if not.
+    /// - An `Err` if it fails.
     pub fn fetch_email(
         &self,
         imap_cli: &mut Session<TlsStream<TcpStream>>,
     ) -> imap::error::Result<Option<String>> {
+        // Fetch & show available inboxes from IMAP server
         println!("> Fetching inboxes...");
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
             .into_iter()
-            .filter(|&s| !s.name().starts_with("&"))
+            .filter(|&s| !s.name().contains("&"))
             .map(|s| s.name().to_string())
-            .collect::<Vec<String>>();
-        let size = inboxes.len();
-
+            .collect::<Vec<_>>();
         for (i, inbox) in inboxes.iter().enumerate() {
             println!("  [{}] {}", i + 1, inbox);
         }
+
+        // Select inbox
+        let size = inboxes.len();
         let input = read_input("  Select an inbox: ");
         let mut inbox: usize = match input.trim().parse().ok() {
             Some(x) if x >= 1 && x <= size => x,
@@ -148,6 +153,9 @@ impl User {
         };
         inbox -= 1;
         imap_cli.select(inboxes[inbox].clone())?;
+
+        // Fetch the first message
+        // todo: list all available emails to choose from
         let messages = imap_cli.fetch("1", "RFC822")?;
         let message = if let Some(m) = messages.iter().next() {
             m
@@ -156,6 +164,7 @@ impl User {
             return Ok(None);
         };
 
+        // Parse `Body`
         let body = message.body().expect("message did not have a body!");
         let body = str::from_utf8(body)
             .expect("message was not valid utf-8")
