@@ -25,8 +25,8 @@ It would ask you to login, here's an example:
 ```text
 > Logging in is required before interacting with the SMTP/IMAP server.
   Server domain (eg. "smtp.qq.com"): smtp.gmail.com (your target SMTP server)
-  Email: amy1024@gmail.com (your corresponding email address)
-  Password (SMTP/IMAP password, eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx (something like this, google "gmail smtp password" for help)
+  Email address: amy1024@gmail.com (your corresponding email address)
+  SMTP/IMAP password (eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx (something like this, google "gmail smtp password" for help)
 ```
 
 If nothing goes wrong, the user agent would be connected to your server, and would ask you to select an action:
@@ -37,7 +37,7 @@ If nothing goes wrong, the user agent would be connected to your server, and wou
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 2 (enter the number for the action you want)
 ```
 
@@ -73,7 +73,7 @@ If sending succeeds, the agent would print a message:
 > Email sent to bob2048@gmail.com successfully!
 ```
 
-## Fetch email
+## Fetch message
 
 Enter "2" for this action, the agent would then ask you to choose an inbox:
 
@@ -91,7 +91,7 @@ After you've selected one, the agent would then check if there's email and fetch
 
 ```text
   Select an inbox: 1
-> Email fetched:
+> Message fetched:
   -------------------------------------
   From: bob2048@gmail.com
   To: amy1024@gmail.com
@@ -113,14 +113,14 @@ cargo run
 ```text
 > Logging in is required before interacting with the SMTP/IMAP server.
   Server domain (eg. "smtp.qq.com"): smtp.gmail.com
-  Email: amy1024@gmail.com
-  Password (SMTP/IMAP password, eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx
+  Email address: amy1024@gmail.com
+  SMTP/IMAP password (eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx
 > Connected to smtp.gmail.com.
 > Connected to imap.gmail.com.
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 2
 > Fetching inboxes...
   [1] INBOX
@@ -129,7 +129,7 @@ cargo run
   [4] Deleted Messages
   [5] Junk
   Select an inbox: 1
-> Email fetched:
+> Message fetched:
   -------------------------------------
   From: bob2048@gmail.com
   To: amy1024@gmail.com
@@ -143,7 +143,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 1
 > New draft:
   -------------------------------------
@@ -163,7 +163,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 1
 > New draft:
   -------------------------------------
@@ -183,7 +183,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 0
 > Logging out from imap.gmail.com...
 > Quitting user agent...

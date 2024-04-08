@@ -25,8 +25,8 @@ cargo run
 ```text
 > Logging in is required before interacting with the SMTP/IMAP server.
   Server domain (eg. "smtp.qq.com"): smtp.gmail.com (你的目标 SMTP 服务器)
-  Email: amy1024@gmail.com (你相应的邮箱地址)
-  Password (SMTP/IMAP password, eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx (类似这样的一串，搜索 “邮箱授权码” 获取更多帮助)
+  Email address: amy1024@gmail.com (你相应的邮箱地址)
+  SMTP/IMAP password (eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx (类似这样的一串，搜索 “邮箱授权码” 获取更多帮助)
 ```
 
 如果一切正常，用户代理将连接到你的服务器，并请你指定一个操作：
@@ -37,7 +37,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 2 (输入你想执行的操作标号)
 ```
 
@@ -91,7 +91,7 @@ cargo run
 
 ```text
   Select an inbox: 1
-> Email fetched:
+> Message fetched:
   -------------------------------------
   From: bob2048@gmail.com
   To: amy1024@gmail.com
@@ -113,14 +113,14 @@ cargo run
 ```text
 > Logging in is required before interacting with the SMTP/IMAP server.
   Server domain (eg. "smtp.qq.com"): smtp.gmail.com
-  Email: amy1024@gmail.com
-  Password (SMTP/IMAP password, eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx
+  Email address: amy1024@gmail.com
+  SMTP/IMAP password (eg. "jfoaiwnpsej"): ioaenfkuhvkusanelx
 > Connected to smtp.gmail.com.
 > Connected to imap.gmail.com.
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 2
 > Fetching inboxes...
   [1] INBOX
@@ -129,7 +129,7 @@ cargo run
   [4] Deleted Messages
   [5] Junk
   Select an inbox: 1
-> Email fetched:
+> Message fetched:
   -------------------------------------
   From: bob2048@gmail.com
   To: amy1024@gmail.com
@@ -143,7 +143,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 1
 > New draft:
   -------------------------------------
@@ -163,7 +163,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 1
 > New draft:
   -------------------------------------
@@ -183,7 +183,7 @@ cargo run
 > Actions:
   0 Logout & quit
   1 Send email
-  2 Fetch email
+  2 Fetch message
   Select an action: 0
 > Logging out from imap.gmail.com...
 > Quitting user agent...
