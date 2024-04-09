@@ -11,6 +11,124 @@ use std::{
     str,
 };
 
+pub enum Language {
+    EN,
+    ZH,
+}
+
+pub struct Prompts {
+    pub login: &'static str,
+    pub domain: &'static str,
+    pub email: &'static str,
+    pub password: &'static str,
+    pub connected: &'static str,
+    pub connecting_smtp_failed: &'static str,
+    pub connecting_imap_failed: &'static str,
+    pub select_action: &'static str,
+    pub invalid_action: &'static str,
+    pub new_draft: &'static str,
+    pub horizontal: &'static str,
+    pub to: &'static str,
+    pub subject: &'static str,
+    pub body: &'static str,
+    pub reconfirmation: &'static str,
+    pub sending: &'static str,
+    pub sent: &'static str,
+    pub sending_canceled: &'static str,
+    pub sending_failed: &'static str,
+    pub fetching_inboxes: &'static str,
+    pub select_inbox: &'static str,
+    pub invalid_inbox: &'static str,
+    pub message_fetched: &'static str,
+    pub no_messages: &'static str,
+    pub reading_message_failed: &'static str,
+    pub logging_out: &'static str,
+    pub quitting: &'static str,
+}
+
+const PROMPTS_EN: Prompts = Prompts {
+    login: "> Logging in is required before interacting with the SMTP/IMAP server.",
+    domain: "  Server domain (eg. \"smtp.qq.com\"): ",
+    email: "  Email address: ",
+    password: "  SMTP/IMAP password (eg. \"jfoaiwnpsej\"): ",
+    connected: "> Connected to ",
+    connecting_smtp_failed: "! Failed when connecting to SMTP server: ",
+    connecting_imap_failed: "! Failed when connecting to IMAP server: ",
+    select_action: "\
+> Actions:
+  [0] Logout & quit
+  [1] Send email
+  [2] Fetch message
+  Select an action: ",
+    invalid_action: "! Invalid action: should be 0, 1 or 2.",
+    new_draft: "> New draft:",
+    horizontal: "  -------------------------------------",
+    to: "  To (receiver's email address): ",
+    subject: "  Subject: ",
+    body: "  Body (press 3 `Enter`s in a row to finish):",
+    reconfirmation: "\
+> You have finished editing,
+  if everything looks fine,
+  enter \"yes\" to confirm sending: ",
+    sending: "> Sending...",
+    sent: "> Your email has been sent to ",
+    sending_canceled: "> Sending canceled.",
+    sending_failed: "! Sending failed: ",
+    fetching_inboxes: "> Fetching inboxes...",
+    select_inbox: "  Select an inbox: ",
+    invalid_inbox: "! Invalid inbox: should be in between 1 and ",
+    message_fetched: "> Message fetched:",
+    no_messages: " has no messages.",
+    reading_message_failed: "! Could not read email: ",
+    logging_out: "> Logging out from ",
+    quitting: "> Quitting user agent...",
+};
+
+const PROMPTS_ZH: Prompts = Prompts {
+    login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
+    domain: "  服务器域名 (如 \"smtp.qq.com\"): ",
+    email: "  邮箱: ",
+    password: "  SMTP/IMAP 密码 (如 \"jfoaiwnpsej\"): ",
+    connected: "> 已连接到 ",
+    connecting_smtp_failed: "! 无法连接到 SMTP 服务器: ",
+    connecting_imap_failed: "! 无法连接到 IMAP 服务器: ",
+    select_action: "\
+> 操作:
+  [0] 登出 & 关闭
+  [1] 发送邮件
+  [2] 收取邮件
+  选择操作: ",
+    invalid_action: "! 无效操作: 应为 0, 1 或 2.",
+    new_draft: "> 新草稿:",
+    horizontal: "  -------------------------------------",
+    to: "  发往 (收件人的邮箱): ",
+    subject: "  主题: ",
+    body: "  正文 (连按 3 次 `Enter` 键以结束输入):",
+    reconfirmation: "\
+> 你已完成编辑,
+  如果一切无误,
+  输入 \"yes\" 以确认发送: ",
+    sending: "> 发送中...",
+    sent: "> 你的邮件已发往 ",
+    sending_canceled: "> 取消发送.",
+    sending_failed: "! 发送失败: ",
+    fetching_inboxes: "> 获取收件箱...",
+    select_inbox: "  选择收件箱: ",
+    invalid_inbox: "! 无效收件箱: 应为 1 到 ",
+    message_fetched: "> 收到邮件:",
+    no_messages: " 没有邮件.",
+    reading_message_failed: "! 邮件读取失败: ",
+    logging_out: "> 退出登录 ",
+    quitting: "> 退出客户代理...",
+};
+
+pub fn get_prompts(lang: &Language) -> &'static Prompts {
+    match lang {
+        Language::EN => &PROMPTS_EN,
+        Language::ZH => &PROMPTS_ZH,
+    }
+}
+
 /// Represents a user.
 pub struct User {
     pub smtp_domain: String,
@@ -21,11 +139,10 @@ pub struct User {
 
 impl User {
     /// Constructs a new `User` from user input.
-    pub fn build() -> User {
-        // Read user input
-        let domain = Self::sanitize_domain(&read_input("  Server domain (eg. \"smtp.qq.com\"): "));
-        let email = read_input("  Email address: ");
-        let password = read_input("  SMTP/IMAP password (eg. \"jfoaiwnpsej\"): ");
+    pub fn build(prompts: &Prompts) -> User {
+        let domain = User::sanitize_domain(read_input(prompts.domain));
+        let email = read_input(prompts.email);
+        let password = read_input(prompts.password);
 
         User {
             smtp_domain: format!("smtp.{}", domain),
@@ -81,36 +198,35 @@ impl User {
     ///     - A `Some` containing the receiver's email address if sending succeeds.
     ///     - A `None` if the user cancels sending during reconfirmation.
     /// - An `Error` if it fails.
-    pub fn send_email(&self, smtp_cli: &SmtpTransport) -> Result<Option<String>, Error> {
-        println!("> New draft:");
-        println!("  -------------------------------------");
+    pub fn send_email(
+        &self,
+        smtp_cli: &SmtpTransport,
+        prompts: &Prompts,
+    ) -> Result<Option<String>, Error> {
+        println!("{}", prompts.new_draft);
+        println!("{}", prompts.horizontal);
 
         // Read & save `to` for returning
-        let to = read_input("  To: ");
+        let to = read_input(prompts.to);
 
         // Build the email
         let email = Message::builder()
             .from(self.email.clone().parse().unwrap())
             .to(to.parse().unwrap())
-            .subject(read_input("  Subject: "))
+            .subject(read_input(prompts.subject))
             .header(ContentType::TEXT_PLAIN)
-            .body(read_body())
+            .body(read_body(&prompts))
             .unwrap();
-        println!("  -------------------------------------");
+        println!("{}", prompts.horizontal);
 
         // Reconfirm
-        let confirmation = read_input(
-            "\
-> You have finished editing,
-  if everything looks fine,
-  enter \"yes\" to confirm sending: ",
-        );
+        let confirmation = read_input(prompts.reconfirmation);
         if confirmation.trim().to_lowercase() != "yes" {
             return Ok(None);
         }
 
         // Send the email
-        println!("> Sending...");
+        println!("{}", prompts.sending);
         match smtp_cli.send(&email) {
             Ok(_) => Ok(Some(to)),
             Err(e) => Err(Error::from(e)),
@@ -128,9 +244,10 @@ impl User {
     pub fn fetch_email(
         &self,
         imap_cli: &mut Session<TlsStream<TcpStream>>,
+        prompts: &Prompts,
     ) -> imap::error::Result<Option<String>> {
         // Fetch & show available inboxes from IMAP server
-        println!("> Fetching inboxes...");
+        println!("{}", prompts.fetching_inboxes);
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
             .into_iter()
@@ -143,11 +260,11 @@ impl User {
 
         // Select inbox
         let size = inboxes.len();
-        let input = read_input("  Select an inbox: ");
+        let input = read_input(prompts.select_inbox);
         let mut inbox: usize = match input.trim().parse().ok() {
             Some(x) if x >= 1 && x <= size => x,
             _ => {
-                println!("> Invalid input: should be in between 1 and {}.", size);
+                println!("{}{}.", prompts.invalid_inbox, size);
                 return Ok(None);
             }
         };
@@ -160,7 +277,7 @@ impl User {
         let message = if let Some(m) = messages.iter().next() {
             m
         } else {
-            println!("> No messages in \"{}\"", inboxes[inbox]);
+            println!("> \"{}\"{}", inboxes[inbox], prompts.no_messages);
             return Ok(None);
         };
 
@@ -174,7 +291,7 @@ impl User {
     }
 
     /// Sanitizes the domain name from user input, removes prefixing "smtp." or "imap.".
-    fn sanitize_domain(input: &str) -> String {
+    pub fn sanitize_domain(input: String) -> String {
         if let Some(domain) = input.strip_prefix("smtp.") {
             return domain.to_string();
         } else if let Some(domain) = input.strip_prefix("imap.") {
@@ -198,8 +315,8 @@ pub fn read_input(prompt: &str) -> String {
 }
 
 /// Reads the email's body from user input, until 2 consecutive \`Enter\`s are met.
-pub fn read_body() -> String {
-    println!("  Body (press 2 `Enter`s in a row to finish):");
+pub fn read_body(prompts: &Prompts) -> String {
+    println!("{}", prompts.body);
     let mut body = String::new();
     io::stdout().flush().expect("failed to flush stdout");
 

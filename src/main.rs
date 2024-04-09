@@ -1,26 +1,48 @@
 use echo_unity_archivist::*;
 
 fn main() {
+    let mut lang: Option<usize>; // user chosen language
+
+    // Validate user input
+    loop {
+        let input = read_input(
+            "\
+> [1] English
+  [2] 中文
+  Select lang 选择语言: ",
+        );
+        lang = input.trim().parse().ok();
+        match lang {
+            Some(1) | Some(2) => break,
+            _ => println!("! 1 / 2 !"),
+        }
+    }
+
+    let prompts = match lang.unwrap() {
+        1 => get_prompts(&Language::EN),
+        2 => get_prompts(&Language::ZH),
+        _ => unreachable!(),
+    };
+
     // Log in to SMTP & IMAP servers
     // todo: allow user to try again in case of failure, instead of `panic!`
-    println!("> Logging in is required before interacting with the SMTP/IMAP server.");
-
-    let user = User::build();
+    println!("{}", prompts.login);
+    let user = User::build(&prompts);
 
     let smtp_cli = match user.connect_smtp() {
         Ok(transport) => {
-            println!("> Connected to {}.", user.smtp_domain);
+            println!("{}{}.", prompts.connected, user.smtp_domain);
             transport
         }
-        Err(e) => panic!("> Failed when connecting to SMTP server: {:?}", e),
+        Err(e) => panic!("{}{:?}", prompts.connecting_smtp_failed, e),
     };
 
     let mut imap_cli = match user.connect_imap() {
         Ok(session) => {
-            println!("> Connected to {}.", user.imap_domain);
+            println!("{}{}.", prompts.connected, user.imap_domain);
             session
         }
-        Err(e) => panic!("> Failed when connecting to IMAP server: {:?}", e),
+        Err(e) => panic!("{}{:?}", prompts.connecting_imap_failed, e),
     };
 
     // Perform user actions
@@ -29,18 +51,11 @@ fn main() {
 
         // Validate user input
         loop {
-            let input = read_input(
-                "\
-> Actions:
-  0 Logout & quit
-  1 Send email
-  2 Fetch message
-  Select an action: ",
-            );
+            let input = read_input(prompts.select_action);
             act = input.trim().parse().ok();
             match act {
                 Some(0..=2) => break,
-                _ => println!("> Invalid input: should be 0, 1 or 2."),
+                _ => println!("{}", prompts.invalid_action),
             }
         }
 
@@ -48,19 +63,19 @@ fn main() {
         // todo: new threads for action handling
         match act.unwrap() {
             0 => break,
-            1 => match user.send_email(&smtp_cli) {
+            1 => match user.send_email(&smtp_cli, &prompts) {
                 Ok(recv) => match recv {
-                    None => println!("> Sending canceled."),
-                    Some(to) => println!("> Your email has been sent to {}.", to),
+                    None => println!("{}", prompts.sending_canceled),
+                    Some(to) => println!("{}{}.", prompts.sent, to),
                 },
-                Err(e) => println!("> Could not send email: {:?}", e),
+                Err(e) => println!("{}{:?}", prompts.sending_failed, e),
             },
-            2 => match user.fetch_email(&mut imap_cli) {
+            2 => match user.fetch_email(&mut imap_cli, &prompts) {
                 Ok(option) => match option {
                     None => {}
                     Some(email) => {
-                        println!("> Message fetched:");
-                        println!("  -------------------------------------");
+                        println!("{}", prompts.message_fetched);
+                        println!("{}", prompts.horizontal);
                         let mut real_body_met = false;
                         for line in email.lines().into_iter() {
                             if line.starts_with("From: ") {
@@ -70,17 +85,17 @@ fn main() {
                                 println!("  {}", line);
                             }
                         }
-                        println!("  -------------------------------------");
+                        println!("{}", prompts.horizontal);
                     }
                 },
-                Err(e) => println!("> Could not read email: {:?}", e),
+                Err(e) => println!("{}{:?}", prompts.reading_message_failed, e),
             },
             _ => unreachable!(), // only to satisfy the compiler
         }
     }
 
     // Logout & quit
-    println!("> Logging out from {}...", user.imap_domain);
+    println!("{}{}...", prompts.logging_out, user.imap_domain);
     imap_cli.logout().unwrap();
-    println!("> Quitting user agent...");
+    println!("{}", prompts.quitting);
 }
