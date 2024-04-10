@@ -36,7 +36,9 @@ pub struct Prompts {
     pub send_to: &'static str,
     pub send_subject: &'static str,
     pub send_body: &'static str,
-    pub send_reconfirmation: &'static str,
+    pub send_editing_finish: &'static str,
+    pub send_reconfirm: &'static str,
+    pub send_reconfirm_invalid: &'static str,
     pub send_sending: &'static str,
     pub send_sent: &'static str,
     pub send_canceled: &'static str,
@@ -74,11 +76,14 @@ const PROMPTS_EN: Prompts = Prompts {
     send_new_draft: "> New draft:",
     send_to: "  To (receiver's email address): ",
     send_subject: "  Subject: ",
-    send_body: "  Body (press 3 `Enter`s in a row to finish):",
-    send_reconfirmation: "\
-> You have finished editing,
-  if everything looks fine,
-  enter \"yes\" to confirm sending: ",
+    send_body: "  Body (press 3 `Enter`s in a row to finish editing):",
+    send_editing_finish: "> You have finished editing.",
+    send_reconfirm: "\
+> Reconfirmation:
+  [yes] confirm sending
+  [no] cancel
+  Confirm: ",
+    send_reconfirm_invalid: "! Invalid choice: should be \"yes\" or \"no\".",
     send_sending: "> Sending...",
     send_sent: "> Your email has been sent to ",
     send_canceled: "> Sending canceled.",
@@ -116,11 +121,14 @@ const PROMPTS_ZH: Prompts = Prompts {
     send_new_draft: "> 新草稿:",
     send_to: "  发往 (收件人的邮箱): ",
     send_subject: "  主题: ",
-    send_body: "  正文 (连按 3 次 `Enter` 键以结束输入):",
-    send_reconfirmation: "\
-> 你已完成编辑,
-  如果一切无误,
-  输入 \"yes\" 以确认发送: ",
+    send_body: "  正文 (连按 3 次 `Enter` 键以完成编辑):",
+    send_editing_finish: "> 你已完成编辑.",
+    send_reconfirm: "\
+> 再次确认:
+  [yes] 确认发送
+  [no] 取消发送
+  确认: ",
+    send_reconfirm_invalid: "! 应为 \"yes\" 或 \"no\".",
     send_sending: "> 发送中...",
     send_sent: "> 你的邮件已发往 ",
     send_canceled: "> 取消发送.",
@@ -280,10 +288,10 @@ impl User {
             .body(read_body(&prompts))
             .unwrap();
         println!("{}", prompts.horizontal);
+        println!("{}", prompts.send_editing_finish);
 
         // Reconfirm
-        let confirmation = read_input(prompts.send_reconfirmation);
-        if confirmation.trim().to_lowercase() != "yes" {
+        if !read_reconfirmation(&prompts) {
             return Ok(None);
         }
 
@@ -308,7 +316,7 @@ impl User {
         imap_cli: &mut Session<TlsStream<TcpStream>>,
         prompts: &Prompts,
     ) -> imap::error::Result<Option<String>> {
-        // Fetch & show available inboxes from IMAP server
+        // Fetch available inboxes from IMAP server
         println!("{}", prompts.fetch_inbox);
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
@@ -391,6 +399,17 @@ pub fn read_selection(read_prompt: &str, invalid_prompt: &str, lo: usize, hi: us
     }
 }
 
+pub fn read_reconfirmation(prompts: &Prompts) -> bool {
+    loop {
+        let input = read_input(prompts.send_reconfirm).to_lowercase();
+        if matches!(input.as_str(), "yes" | "no") {
+            return input == "yes";
+        } else {
+            println!("{}", prompts.send_reconfirm_invalid);
+        }
+    }
+}
+
 /// Reads the email's body from user input, until 2 consecutive empty lines are met.
 pub fn read_body(prompts: &Prompts) -> String {
     println!("{}", prompts.send_body);
@@ -418,6 +437,7 @@ pub fn read_body(prompts: &Prompts) -> String {
     body.trim_end().to_string()
 }
 
+/// Prints the real body part of an email, ignores useless headers.
 pub fn print_email_body(email: String, prompts: &Prompts) {
     println!("{}", prompts.fetch_message_fetched);
     println!("{}", prompts.horizontal);
