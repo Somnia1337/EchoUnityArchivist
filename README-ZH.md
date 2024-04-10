@@ -1,3 +1,5 @@
+! 此 README 已经过时，正在等待更新。
+
 [English](https://github.com/Somnia1337/EchoUnityArchivist/blob/main/README.md)
 
 # [谐声收藏家](https://github.com/Somnia1337/EchoUnityArchivist)
