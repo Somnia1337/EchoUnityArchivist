@@ -6,7 +6,7 @@ fn main() {
 > [1] English
   [2] 简体中文
   Select language 选择语言: ";
-    let prompts = match select_usize(lang_selection, "! Must be 必须为 1 / ", 1, 2) {
+    let prompts = match read_selection(lang_selection, "! Must be 必须为 1 / ", 1, 2) {
         1 => get_prompts(&Lang::EN),
         2 => get_prompts(&Lang::ZH),
         _ => unreachable!(),
@@ -15,31 +15,15 @@ fn main() {
     // Welcome
     println!("{}", prompts.eua_welcome);
 
-    // Log in to SMTP & IMAP servers
-    // todo: allow retry in case of failure
+    // Login to SMTP & IMAP servers
     println!("{}", prompts.login);
-    let user = User::build(&prompts);
-
-    let smtp_cli = match user.connect_smtp() {
-        Ok(transport) => {
-            println!("{}{}.", prompts.login_succeed, user.smtp_domain);
-            transport
-        }
-        Err(e) => panic!("{}{:?}", prompts.login_smtp_fail, e),
-    };
-
-    let mut imap_cli = match user.connect_imap() {
-        Ok(session) => {
-            println!("{}{}.", prompts.login_succeed, user.imap_domain);
-            session
-        }
-        Err(e) => panic!("{}{:?}", prompts.login_imap_fail, e),
-    };
+    let mut user = User::build(&prompts);
+    let smtp_cli = user.login_smtp(&prompts);
+    let mut imap_cli = user.login_imap(&prompts);
 
     // Perform user actions
     loop {
-        // todo: new threads for action handling
-        match select_usize(prompts.action_selection, prompts.action_invalid, 0, 2) {
+        match read_selection(prompts.action_selection, prompts.action_invalid, 0, 2) {
             0 => break,
             1 => match user.send_email(&smtp_cli, &prompts) {
                 Ok(recv) => match recv {
@@ -48,25 +32,12 @@ fn main() {
                 },
                 Err(e) => println!("{}{:?}", prompts.send_fail, e),
             },
-            2 => match user.fetch_email(&mut imap_cli, &prompts) {
+            2 => match user.fetch_message(&mut imap_cli, &prompts) {
                 Ok(option) => match option {
                     None => {}
-                    Some(email) => {
-                        println!("{}", prompts.read_message_fetched);
-                        println!("{}", prompts.horizontal);
-                        let mut real_body_met = false;
-                        for line in email.lines().into_iter() {
-                            if line.starts_with("From: ") {
-                                real_body_met = true;
-                            }
-                            if real_body_met && !line.starts_with("Content") {
-                                println!("  {}", line);
-                            }
-                        }
-                        println!("{}", prompts.horizontal);
-                    }
+                    Some(email) => print_email_body(email, &prompts),
                 },
-                Err(e) => println!("{}{:?}", prompts.read_message_fail, e),
+                Err(e) => println!("{}{:?}", prompts.fetch_message_fail, e),
             },
             _ => unreachable!(), // only to satisfy the compiler
         }
