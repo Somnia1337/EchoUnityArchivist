@@ -23,7 +23,6 @@ pub struct Prompts {
     pub eua_logging_out: &'static str,
     pub eua_quitting: &'static str,
     pub login: &'static str,
-    pub login_domain: &'static str,
     pub login_email: &'static str,
     pub login_password: &'static str,
     pub login_connecting: &'static str,
@@ -32,52 +31,95 @@ pub struct Prompts {
     pub login_retry: &'static str,
     pub action_selection: &'static str,
     pub action_invalid: &'static str,
-    pub send_new_draft: &'static str,
-    pub send_to: &'static str,
-    pub send_subject: &'static str,
-    pub send_body: &'static str,
-    pub send_editing_finish: &'static str,
+    pub compose_new_draft: &'static str,
+    pub compose_to: &'static str,
+    pub compose_subject: &'static str,
+    pub compose_content: &'static str,
+    pub compose_editing_finish: &'static str,
     pub send_reconfirm: &'static str,
     pub send_reconfirm_invalid: &'static str,
     pub send_sending: &'static str,
-    pub send_sent: &'static str,
+    pub send_succeed: &'static str,
     pub send_canceled: &'static str,
     pub send_fail: &'static str,
     pub fetch_mailbox: &'static str,
     pub fetch_mailbox_selection: &'static str,
     pub fetch_mailbox_invalid: &'static str,
-    pub fetch_message_fetched: &'static str,
+    pub fetch_message_succeed: &'static str,
     pub fetch_mailbox_empty: &'static str,
     pub fetch_message_fail: &'static str,
 }
+
+/// A `Prompts` constant containing all prompts in Chinese-Simplified.
+const PROMPTS_ZH: Prompts = Prompts {
+    horizontal: "  -------------------------------------",
+    email_invalid: "! 无效邮箱: 请检查并重新输入.",
+    eua_welcome: "> 谐声收藏家————你的 📧 用户代理.",
+    eua_logging_out: "> 正在退出登录 ",
+    eua_quitting: "> 正在退出谐声收藏家...",
+    login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
+    login_email: "  邮箱: ",
+    login_password: "  SMTP/IMAP 授权码 (不是邮箱密码): ",
+    login_connecting: "> 正在连接 ",
+    login_succeed: "✓ 已连接到 ",
+    login_fail: "! 无法连接 ",
+    login_retry: "> 重新尝试登录.",
+    action_selection: "\
+> 操作:
+  [0] 登出 & 关闭
+  [1] 写信
+  [2] 收信
+  选择操作: ",
+    action_invalid: "! 无效操作: 应为 0, 1 或 ",
+    compose_new_draft: "> 新邮件:",
+    compose_to: "  收件人: ",
+    compose_subject: "  主题: ",
+    compose_content: "  正文 (连按 3 次 `Enter` 键以完成编辑):",
+    compose_editing_finish: "> 你已完成编辑.",
+    send_reconfirm: "\
+> 再次确认:
+  [yes] 确认发送
+  [no] 取消发送
+  确认: ",
+    send_reconfirm_invalid: "! 应为 \"yes\" 或 \"no\".",
+    send_sending: "> 正在发送...",
+    send_succeed: "✓ 你的邮件已发至 ",
+    send_canceled: "> 发送已取消.",
+    send_fail: "! 发送失败: ",
+    fetch_mailbox: "> 正在获取收件箱...",
+    fetch_mailbox_selection: "  选择收件箱: ",
+    fetch_mailbox_invalid: "! 无效收件箱: 应为 1 到 ",
+    fetch_message_succeed: "✓ 收到邮件:",
+    fetch_mailbox_empty: " 里没有邮件.",
+    fetch_message_fail: "! 邮件读取失败: ",
+};
 
 /// A `Prompts` constant containing all prompts in English.
 const PROMPTS_EN: Prompts = Prompts {
     horizontal: "  -------------------------------------",
     email_invalid: "! Invalid email, please check and try again.",
-    eua_welcome: "> Echo Unity Archivist - Your 📧 user agent.",
+    eua_welcome: "> Echo Unity Archivist - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
-    eua_quitting: "> Quitting user agent...",
-    login: "> Logging in is required before interacting with the SMTP/IMAP server.",
-    login_domain: "  Server domain (eg. \"gmail.com\"): ",
+    eua_quitting: "> Quitting Echo Unity Archivist...",
+    login: "> Login is required before interacting with the SMTP/IMAP server.",
     login_email: "  Email address: ",
-    login_password: "  SMTP/IMAP password: ",
+    login_password: "  SMTP/IMAP password (not email password): ",
     login_connecting: "> Connecting to ",
-    login_succeed: "> Connected to ",
+    login_succeed: "✓ Connected to ",
     login_fail: "! Failed when connecting to ",
-    login_retry: "> Retry logging in.",
+    login_retry: "> Retry login.",
     action_selection: "\
 > Actions:
   [0] Logout & quit
-  [1] Send email
+  [1] Compose
   [2] Fetch message
   Select an action: ",
     action_invalid: "! Invalid action: should be 0, 1 or ",
-    send_new_draft: "> New draft:",
-    send_to: "  To (receiver's email address): ",
-    send_subject: "  Subject: ",
-    send_body: "  Body (press `Enter` 3 times in a row to finish editing):",
-    send_editing_finish: "> You have finished editing.",
+    compose_new_draft: "> New message:",
+    compose_to: "  To: ",
+    compose_subject: "  Subject: ",
+    compose_content: "  Content (press `Enter` 3 times in a row to finish editing):",
+    compose_editing_finish: "> You have finished editing.",
     send_reconfirm: "\
 > Reconfirmation:
   [yes] confirm sending
@@ -85,60 +127,15 @@ const PROMPTS_EN: Prompts = Prompts {
   Confirm: ",
     send_reconfirm_invalid: "! Invalid choice: should be \"yes\" or \"no\".",
     send_sending: "> Sending...",
-    send_sent: "> Your email has been sent to ",
+    send_succeed: "✓ Your email has been sent to ",
     send_canceled: "> Sending canceled.",
     send_fail: "! Sending failed: ",
     fetch_mailbox: "> Fetching mailboxes...",
     fetch_mailbox_selection: "  Select a mailbox: ",
     fetch_mailbox_invalid: "! Invalid mailbox: should be in between 1 and ",
-    fetch_message_fetched: "> Fetched message:",
+    fetch_message_succeed: "✓ Fetched message:",
     fetch_mailbox_empty: " has no messages.",
     fetch_message_fail: "! Could not read email: ",
-};
-
-/// A `Prompts` constant containing all prompts in Chinese-Simplified.
-const PROMPTS_ZH: Prompts = Prompts {
-    horizontal: "  -------------------------------------",
-    email_invalid: "! 无效邮箱: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家————你的 📧 用户代理.",
-    eua_logging_out: "> 退出登录 ",
-    eua_quitting: "> 退出客户代理...",
-    login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
-    login_domain: "  服务器域名 (如 \"qq.com\"): ",
-    login_email: "  邮箱: ",
-    login_password: "  SMTP/IMAP 授权码: ",
-    login_connecting: "> 正在连接 ",
-    login_succeed: "> 已连接到 ",
-    login_fail: "! 无法连接 ",
-    login_retry: "> 重新尝试登录.",
-    action_selection: "\
-> 操作:
-  [0] 登出 & 关闭
-  [1] 发送邮件
-  [2] 收取邮件
-  选择操作: ",
-    action_invalid: "! 无效操作: 应为 0, 1 或 ",
-    send_new_draft: "> 新草稿:",
-    send_to: "  发往 (收件人的邮箱): ",
-    send_subject: "  主题: ",
-    send_body: "  正文 (连按 3 次 `Enter` 键以完成编辑):",
-    send_editing_finish: "> 你已完成编辑.",
-    send_reconfirm: "\
-> 再次确认:
-  [yes] 确认发送
-  [no] 取消发送
-  确认: ",
-    send_reconfirm_invalid: "! 应为 \"yes\" 或 \"no\".",
-    send_sending: "> 发送中...",
-    send_sent: "> 你的邮件已发往 ",
-    send_canceled: "> 发送已取消.",
-    send_fail: "! 发送失败: ",
-    fetch_mailbox: "> 获取收件箱...",
-    fetch_mailbox_selection: "  选择收件箱: ",
-    fetch_mailbox_invalid: "! 无效收件箱: 应为 1 到 ",
-    fetch_message_fetched: "> 收到邮件:",
-    fetch_mailbox_empty: " 里没有邮件.",
-    fetch_message_fail: "! 邮件读取失败: ",
 };
 
 /// Returns the `Prompts` constant corresponding to the specified `Lang`.
@@ -160,14 +157,14 @@ pub struct User {
 impl User {
     /// Constructs a new `User` from user input.
     pub fn build(prompts: &Prompts) -> User {
-        let domain = read_input(prompts.login_domain);
-        let email = read_email(prompts.login_email, prompts.email_invalid);
+        let email = read_email(prompts.login_email, prompts.email_invalid).to_string();
         let password = read_input(prompts.login_password);
+        let domain = &email[email.find('@').unwrap() + 1..];
 
         User {
             smtp_domain: format!("smtp.{}", domain),
             imap_domain: format!("imap.{}", domain),
-            email: email.to_string(),
+            email,
             password,
         }
     }
@@ -268,34 +265,34 @@ impl User {
     ///     - A `Some` containing the receiver's email address if sending succeeds.
     ///     - A `None` if the user cancels sending during reconfirmation.
     /// - An `Error` if it fails.
-    pub fn send_email(
+    pub fn compose(
         &self,
         smtp_cli: &SmtpTransport,
         prompts: &Prompts,
     ) -> Result<Option<String>, Box<dyn Error>> {
-        println!("{}", prompts.send_new_draft);
+        println!("{}", prompts.compose_new_draft);
         println!("{}", prompts.horizontal);
 
         // Read & save `to` for returning
-        let to = read_email(prompts.send_to, prompts.email_invalid);
+        let to = read_email(prompts.compose_to, prompts.email_invalid);
 
-        // Build the email
+        // Build the message
         let email = Message::builder()
             .from(self.email.clone().parse().unwrap())
             .to(to.clone())
-            .subject(read_input(prompts.send_subject))
+            .subject(read_input(prompts.compose_subject))
             .header(ContentType::TEXT_PLAIN)
             .body(read_body(&prompts))
             .unwrap();
         println!("{}", prompts.horizontal);
-        println!("{}", prompts.send_editing_finish);
+        println!("{}", prompts.compose_editing_finish);
 
         // Reconfirm
         if !read_reconfirmation(&prompts) {
             return Ok(None);
         }
 
-        // Send the email
+        // Send the message
         println!("{}", prompts.send_sending);
         match smtp_cli.send(&email) {
             Ok(_) => Ok(Some(to.to_string())),
@@ -412,7 +409,7 @@ pub fn read_reconfirmation(prompts: &Prompts) -> bool {
 
 /// Reads the email's body from user input, until 2 consecutive empty lines are met.
 pub fn read_body(prompts: &Prompts) -> String {
-    println!("{}", prompts.send_body);
+    println!("{}", prompts.compose_content);
     let mut body = String::new();
     io::stdout().flush().expect("failed to flush stdout");
 
@@ -439,7 +436,7 @@ pub fn read_body(prompts: &Prompts) -> String {
 
 /// Prints the real body part of an email, ignores useless headers.
 pub fn print_email_body(email: String, prompts: &Prompts) {
-    println!("{}", prompts.fetch_message_fetched);
+    println!("{}", prompts.fetch_message_succeed);
     println!("{}", prompts.horizontal);
     let mut real_body_met = false;
     for line in email.lines().into_iter() {
