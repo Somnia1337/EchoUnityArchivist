@@ -43,11 +43,11 @@ pub struct Prompts {
     pub send_sent: &'static str,
     pub send_canceled: &'static str,
     pub send_fail: &'static str,
-    pub fetch_inbox: &'static str,
-    pub fetch_inbox_selection: &'static str,
-    pub fetch_inbox_invalid: &'static str,
+    pub fetch_mailbox: &'static str,
+    pub fetch_mailbox_selection: &'static str,
+    pub fetch_mailbox_invalid: &'static str,
     pub fetch_message_fetched: &'static str,
-    pub fetch_inbox_empty: &'static str,
+    pub fetch_mailbox_empty: &'static str,
     pub fetch_message_fail: &'static str,
 }
 
@@ -61,7 +61,7 @@ const PROMPTS_EN: Prompts = Prompts {
     login: "> Logging in is required before interacting with the SMTP/IMAP server.",
     login_domain: "  Server domain (eg. \"gmail.com\"): ",
     login_email: "  Email address: ",
-    login_password: "  SMTP/IMAP password (eg. \"jfoaiwnpsej\"): ",
+    login_password: "  SMTP/IMAP password: ",
     login_connecting: "> Connecting to ",
     login_succeed: "> Connected to ",
     login_fail: "! Failed when connecting to ",
@@ -76,7 +76,7 @@ const PROMPTS_EN: Prompts = Prompts {
     send_new_draft: "> New draft:",
     send_to: "  To (receiver's email address): ",
     send_subject: "  Subject: ",
-    send_body: "  Body (press 3 `Enter`s in a row to finish editing):",
+    send_body: "  Body (press `Enter` 3 times in a row to finish editing):",
     send_editing_finish: "> You have finished editing.",
     send_reconfirm: "\
 > Reconfirmation:
@@ -88,11 +88,11 @@ const PROMPTS_EN: Prompts = Prompts {
     send_sent: "> Your email has been sent to ",
     send_canceled: "> Sending canceled.",
     send_fail: "! Sending failed: ",
-    fetch_inbox: "> Fetching inboxes...",
-    fetch_inbox_selection: "  Select an inbox: ",
-    fetch_inbox_invalid: "! Invalid inbox: should be in between 1 and ",
+    fetch_mailbox: "> Fetching mailboxes...",
+    fetch_mailbox_selection: "  Select a mailbox: ",
+    fetch_mailbox_invalid: "! Invalid mailbox: should be in between 1 and ",
     fetch_message_fetched: "> Fetched message:",
-    fetch_inbox_empty: " has no messages.",
+    fetch_mailbox_empty: " has no messages.",
     fetch_message_fail: "! Could not read email: ",
 };
 
@@ -106,7 +106,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
     login_domain: "  服务器域名 (如 \"qq.com\"): ",
     login_email: "  邮箱: ",
-    login_password: "  SMTP/IMAP 密码 (如 \"jfoaiwnpsej\"): ",
+    login_password: "  SMTP/IMAP 授权码: ",
     login_connecting: "> 正在连接 ",
     login_succeed: "> 已连接到 ",
     login_fail: "! 无法连接 ",
@@ -131,13 +131,13 @@ const PROMPTS_ZH: Prompts = Prompts {
     send_reconfirm_invalid: "! 应为 \"yes\" 或 \"no\".",
     send_sending: "> 发送中...",
     send_sent: "> 你的邮件已发往 ",
-    send_canceled: "> 取消发送.",
+    send_canceled: "> 发送已取消.",
     send_fail: "! 发送失败: ",
-    fetch_inbox: "> 获取收件箱...",
-    fetch_inbox_selection: "  选择收件箱: ",
-    fetch_inbox_invalid: "! 无效收件箱: 应为 1 到 ",
+    fetch_mailbox: "> 获取收件箱...",
+    fetch_mailbox_selection: "  选择收件箱: ",
+    fetch_mailbox_invalid: "! 无效收件箱: 应为 1 到 ",
     fetch_message_fetched: "> 收到邮件:",
-    fetch_inbox_empty: " 没有邮件.",
+    fetch_mailbox_empty: " 里没有邮件.",
     fetch_message_fail: "! 邮件读取失败: ",
 };
 
@@ -317,7 +317,7 @@ impl User {
         prompts: &Prompts,
     ) -> imap::error::Result<Option<String>> {
         // Fetch available inboxes from IMAP server
-        println!("{}", prompts.fetch_inbox);
+        println!("{}", prompts.fetch_mailbox);
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
             .into_iter()
@@ -331,8 +331,8 @@ impl User {
         // Select inbox
         let size = inboxes.len();
         let inbox = read_selection(
-            prompts.fetch_inbox_selection,
-            prompts.fetch_inbox_invalid,
+            prompts.fetch_mailbox_selection,
+            prompts.fetch_mailbox_invalid,
             1,
             size,
         ) - 1;
@@ -344,7 +344,7 @@ impl User {
         let message = if let Some(m) = messages.iter().next() {
             m
         } else {
-            println!("> \"{}\"{}", inboxes[inbox], prompts.fetch_inbox_empty);
+            println!("> \"{}\"{}", inboxes[inbox], prompts.fetch_mailbox_empty);
             return Ok(None);
         };
 
