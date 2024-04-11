@@ -1,6 +1,8 @@
 use imap::{self, Session};
-use lettre::{message::header::ContentType, transport::smtp::authentication::Credentials};
-use lettre::{message::Mailbox, Message, SmtpTransport, Transport};
+use lettre::{
+    message::header::ContentType, message::Mailbox, transport::smtp::authentication::Credentials,
+    Message, SmtpTransport, Transport,
+};
 use native_tls::{self, TlsConnector, TlsStream};
 use std::{
     error::Error,
@@ -58,7 +60,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     eua_logging_out: "> 正在退出登录 ",
     eua_quitting: "> 正在退出谐声收藏家...",
     login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
-    login_email: "  邮箱: ",
+    login_email: "  邮箱地址: ",
     login_password: "  SMTP/IMAP 授权码 (不是邮箱密码): ",
     login_connecting: "> 正在连接 ",
     login_succeed: "✓ 已连接到 ",
@@ -81,7 +83,7 @@ const PROMPTS_ZH: Prompts = Prompts {
   [yes] 确认发送
   [no] 取消发送
   确认: ",
-    send_reconfirm_invalid: "! 应为 \"yes\" 或 \"no\".",
+    send_reconfirm_invalid: "! 无效确认: 应为 \"yes\" 或 \"no\".",
     send_sending: "> 正在发送...",
     send_succeed: "✓ 你的邮件已发至 ",
     send_canceled: "> 发送已取消.",
@@ -125,7 +127,7 @@ const PROMPTS_EN: Prompts = Prompts {
   [yes] confirm sending
   [no] cancel
   Confirm: ",
-    send_reconfirm_invalid: "! Invalid choice: should be \"yes\" or \"no\".",
+    send_reconfirm_invalid: "! Invalid confirmation: should be \"yes\" or \"no\".",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
     send_canceled: "> Sending canceled.",

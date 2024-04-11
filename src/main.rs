@@ -3,9 +3,10 @@ use echo_unity_archivist::*;
 fn main() {
     // Select lang
     let lang_selection = "\
-> [1] 简体中文
+> 语言 Languages:
+  [1] 简体中文
   [2] English
-  选择语言 Select language: ";
+  选择语言 Select a language: ";
     let prompts = match read_selection(lang_selection, "! 必须为 Must be 1 / ", 1, 2) {
         1 => get_prompts(&Lang::ZH),
         2 => get_prompts(&Lang::EN),
