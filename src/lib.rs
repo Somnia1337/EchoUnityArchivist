@@ -35,7 +35,7 @@ pub struct Prompts {
     pub login_retry: &'static str,
     pub action_selection: &'static str,
     pub action_invalid: &'static str,
-    pub compose_new_draft: &'static str,
+    pub compose_new_message: &'static str,
     pub compose_to: &'static str,
     pub compose_subject: &'static str,
     pub compose_content: &'static str,
@@ -57,7 +57,7 @@ pub struct Prompts {
 /// A `Prompts` constant containing all prompts in Chinese-Simplified.
 const PROMPTS_ZH: Prompts = Prompts {
     horizontal: "  -------------------------------------",
-    email_invalid: "! 无效邮箱: 请检查并重新输入.",
+    email_invalid: "! 无效邮箱地址: 请检查并重新输入.",
     eua_welcome: "> 谐声收藏家————你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
@@ -77,7 +77,7 @@ const PROMPTS_ZH: Prompts = Prompts {
   [2] 收信
   选择操作: ",
     action_invalid: "! 无效操作: 应为 0, 1 或 ",
-    compose_new_draft: "> 新邮件:",
+    compose_new_message: "> 新邮件:",
     compose_to: "  收件人: ",
     compose_subject: "  主题: ",
     compose_content: "  正文 (连按 3 次 `Enter` 键以完成编辑):",
@@ -97,7 +97,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     fetch_mailbox_invalid: "! 无效收件箱: 应为 1 到 ",
     fetch_message_succeed: "✓ 收到邮件:",
     fetch_mailbox_empty: " 里没有邮件.",
-    fetch_message_fail: "! 邮件读取失败: ",
+    fetch_message_fail: "! 读取失败: ",
 };
 
 /// A `Prompts` constant containing all prompts in English.
@@ -107,14 +107,14 @@ const PROMPTS_EN: Prompts = Prompts {
     eua_welcome: "> Echo Unity Archivist - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
-    eua_logout_fail: "! Failed when logging out: ",
+    eua_logout_fail: "! Failed to logout: ",
     eua_exit: "> Press `Enter` to exit...",
     login: "> Login is required before interacting with the SMTP/IMAP server.",
     login_email: "  Email address: ",
     login_password: "  SMTP/IMAP password (not email password): ",
     login_connecting: "> Connecting to ",
     login_succeed: "✓ Connected to ",
-    login_fail: "! Failed when connecting to ",
+    login_fail: "! Failed to connect ",
     login_retry: "> Retry login.",
     action_selection: "\
 > Actions:
@@ -123,7 +123,7 @@ const PROMPTS_EN: Prompts = Prompts {
   [2] Fetch message
   Select an action: ",
     action_invalid: "! Invalid action: should be 0, 1 or ",
-    compose_new_draft: "> New message:",
+    compose_new_message: "> New message:",
     compose_to: "  To: ",
     compose_subject: "  Subject: ",
     compose_content: "  Content (press `Enter` 3 times in a row to finish editing):",
@@ -137,13 +137,13 @@ const PROMPTS_EN: Prompts = Prompts {
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
     send_canceled: "> Sending canceled.",
-    send_fail: "! Failed when sending message: ",
+    send_fail: "! Failed to send message: ",
     fetch_mailbox: "> Fetching mailboxes...",
     fetch_mailbox_selection: "  Select a mailbox: ",
     fetch_mailbox_invalid: "! Invalid mailbox: should be in between 1 and ",
     fetch_message_succeed: "✓ Fetched message:",
     fetch_mailbox_empty: " has no messages.",
-    fetch_message_fail: "! Failed when reading message: ",
+    fetch_message_fail: "! Failed to read message: ",
 };
 
 /// Returns the `Prompts` constant corresponding to the specified `Lang`.
@@ -278,7 +278,7 @@ impl User {
         smtp_cli: &SmtpTransport,
         prompts: &Prompts,
     ) -> Result<Option<String>, Box<dyn Error>> {
-        println!("{}", prompts.compose_new_draft);
+        println!("{}", prompts.compose_new_message);
         println!("{}", prompts.horizontal);
 
         // Read & save `to` for returning
@@ -377,29 +377,21 @@ pub fn read_input(prompt: &str) -> String {
 }
 
 /// Prompt the user to enter an email address, loops until a valid value is provided.
-pub fn read_email(read_prompt: &str, invalid_prompt: &str) -> Mailbox {
-    let mut selection: Option<Mailbox>;
-
+pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Mailbox {
     loop {
-        let input = read_input(read_prompt);
-        selection = input.trim().parse().ok();
-        match selection {
+        match read_input(prompt_read).trim().parse().ok() {
             Some(x) => return x,
-            _ => println!("{}", invalid_prompt),
+            _ => println!("{}", prompt_invalid),
         }
     }
 }
 
 /// Prompt the user to enter a selection, loops until a valid value is provided.
-pub fn read_selection(read_prompt: &str, invalid_prompt: &str, lo: usize, hi: usize) -> usize {
-    let mut selection: Option<usize>;
-
+pub fn read_selection(prompt_read: &str, prompt_invalid: &str, lo: usize, hi: usize) -> usize {
     loop {
-        let input = read_input(read_prompt);
-        selection = input.trim().parse().ok();
-        match selection {
+        match read_input(prompt_read).trim().parse().ok() {
             Some(x) if x >= lo && x <= hi => return x,
-            _ => println!("{}{}.", invalid_prompt, hi),
+            _ => println!("{}{}.", prompt_invalid, hi),
         }
     }
 }
@@ -419,26 +411,24 @@ pub fn read_reconfirmation(prompts: &Prompts) -> bool {
 pub fn read_body(prompts: &Prompts) -> String {
     println!("{}", prompts.compose_content);
     let mut body = String::new();
-    io::stdout().flush().expect("failed to flush stdout");
+    let mut buf = String::new();
 
-    let mut cnt = 0; // Counter for consecutive empty lines
-    loop {
+    let mut empty_count = 0;
+    while empty_count < 2 {
         print!("  ");
         io::stdout().flush().expect("failed to flush stdout");
-        let mut buf = String::new();
         io::stdin()
             .read_line(&mut buf)
             .expect("failed to read input");
         body += &buf;
         if buf.trim().is_empty() {
-            cnt += 1;
-            if cnt == 2 {
-                break;
-            }
+            empty_count += 1;
         } else {
-            cnt = 0;
+            empty_count = 0;
         }
+        buf.clear();
     }
+
     body.trim_end().to_string()
 }
 
@@ -446,12 +436,14 @@ pub fn read_body(prompts: &Prompts) -> String {
 pub fn print_email_body(email: String, prompts: &Prompts) {
     println!("{}", prompts.fetch_message_succeed);
     println!("{}", prompts.horizontal);
-    let mut real_body_met = false;
+    let mut body = false;
     for line in email.lines().into_iter() {
+        // Real body starts at line "From: "
         if line.starts_with("From: ") {
-            real_body_met = true;
+            body = true;
         }
-        if real_body_met && !line.starts_with("Content") {
+        // Ignore "Content" headers
+        if body && !line.starts_with("Content") {
             println!("  {}", line);
         }
     }
