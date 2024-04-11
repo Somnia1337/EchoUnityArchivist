@@ -44,8 +44,13 @@ fn main() {
         }
     }
 
-    // Logout & quit
+    // Logout from IMAP server
     println!("{}{}...", prompts.eua_logging_out, user.imap_domain);
-    imap_cli.logout().unwrap();
-    println!("{}", prompts.eua_quitting);
+    match imap_cli.logout() {
+        Ok(_) => println!("{}", prompts.eua_logout_succeed),
+        Err(e) => println!("{}{:?}", prompts.eua_logout_fail, e),
+    }
+
+    // Wait for user to exit
+    let _ = read_input(prompts.eua_exit);
 }
