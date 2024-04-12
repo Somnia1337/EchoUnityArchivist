@@ -21,6 +21,7 @@ fn main() {
     let mut user = User::build(&prompts);
     let smtp_cli = user.login_smtp(&prompts);
     let mut imap_cli = user.login_imap(&prompts);
+    println!("{}{}.", prompts.login_succeed, user.email);
 
     // Perform user actions
     loop {
@@ -36,7 +37,7 @@ fn main() {
             2 => match user.fetch_message(&mut imap_cli, &prompts) {
                 Ok(option) => match option {
                     None => {}
-                    Some(email) => print_email_body(email, &prompts),
+                    Some(email) => print_body(email, &prompts),
                 },
                 Err(e) => println!("{}{:?}", prompts.fetch_message_fail, e),
             },

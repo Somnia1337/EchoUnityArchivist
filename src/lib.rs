@@ -30,8 +30,9 @@ pub struct Prompts {
     pub login_email: &'static str,
     pub login_password: &'static str,
     pub login_connecting: &'static str,
+    pub login_connect_succeed: &'static str,
+    pub login_connect_fail: &'static str,
     pub login_succeed: &'static str,
-    pub login_fail: &'static str,
     pub login_retry: &'static str,
     pub action_selection: &'static str,
     pub action_invalid: &'static str,
@@ -67,8 +68,9 @@ const PROMPTS_ZH: Prompts = Prompts {
     login_email: "  邮箱地址: ",
     login_password: "  SMTP/IMAP 授权码 (不是邮箱密码): ",
     login_connecting: "> 正在连接 ",
-    login_succeed: "✓ 已连接到 ",
-    login_fail: "! 无法连接 ",
+    login_connect_succeed: "✓ 已连接到 ",
+    login_connect_fail: "! 无法连接 ",
+    login_succeed: "> 欢迎回来, ",
     login_retry: "> 重新尝试登录.",
     action_selection: "\
 > 操作:
@@ -80,7 +82,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     compose_new_message: "> 新邮件:",
     compose_to: "  收件人: ",
     compose_subject: "  主题: ",
-    compose_content: "  正文 (连按 3 次 `Enter` 键以完成编辑):",
+    compose_content: "  正文 (连续输入 2 个空行以完成编辑):",
     compose_editing_finish: "> 你已完成编辑.",
     send_reconfirm: "\
 > 再次确认:
@@ -113,8 +115,9 @@ const PROMPTS_EN: Prompts = Prompts {
     login_email: "  Email address: ",
     login_password: "  SMTP/IMAP password (not email password): ",
     login_connecting: "> Connecting to ",
-    login_succeed: "✓ Connected to ",
-    login_fail: "! Failed to connect ",
+    login_connect_succeed: "✓ Connected to ",
+    login_connect_fail: "! Failed to connect ",
+    login_succeed: "> Welcome back, ",
     login_retry: "> Retry login.",
     action_selection: "\
 > Actions:
@@ -126,7 +129,7 @@ const PROMPTS_EN: Prompts = Prompts {
     compose_new_message: "> New message:",
     compose_to: "  To: ",
     compose_subject: "  Subject: ",
-    compose_content: "  Content (press `Enter` 3 times in a row to finish editing):",
+    compose_content: "  Content (enter 2 empty lines in a row to finish editing):",
     compose_editing_finish: "> You have finished editing.",
     send_reconfirm: "\
 > Reconfirmation:
@@ -158,7 +161,7 @@ pub fn get_prompts(lang: &Lang) -> &'static Prompts {
 pub struct User {
     pub smtp_domain: String,
     pub imap_domain: String,
-    email: String,
+    pub email: String,
     password: String,
 }
 
@@ -185,13 +188,13 @@ impl User {
             println!("{}{}...", prompts.login_connecting, self.smtp_domain);
             match self.connect_smtp() {
                 Ok(transport) => {
-                    println!("{}{}.", prompts.login_succeed, self.smtp_domain);
+                    println!("{}{}.", prompts.login_connect_succeed, self.smtp_domain);
                     return transport;
                 }
                 Err(e) => {
                     println!(
                         "{}{}: {:?}",
-                        prompts.login_fail,
+                        prompts.login_connect_fail,
                         self.smtp_domain,
                         e.source().unwrap()
                     );
@@ -210,13 +213,13 @@ impl User {
             println!("{}{}...", prompts.login_connecting, self.imap_domain);
             match self.connect_imap() {
                 Ok(session) => {
-                    println!("{}{}.", prompts.login_succeed, self.imap_domain);
+                    println!("{}{}.", prompts.login_connect_succeed, self.imap_domain);
                     return session;
                 }
                 Err(e) => {
                     println!(
                         "{}{}: {:?}",
-                        prompts.login_fail,
+                        prompts.login_connect_fail,
                         self.imap_domain,
                         e.source().unwrap()
                     );
@@ -411,15 +414,16 @@ pub fn read_reconfirmation(prompts: &Prompts) -> bool {
 pub fn read_body(prompts: &Prompts) -> String {
     println!("{}", prompts.compose_content);
     let mut body = String::new();
-    let mut buf = String::new();
+    let mut buf;
 
     let mut empty_count = 0;
     while empty_count < 2 {
-        print!("  ");
-        io::stdout().flush().expect("failed to flush stdout");
-        io::stdin()
-            .read_line(&mut buf)
-            .expect("failed to read input");
+        // print!("  ");
+        // io::stdout().flush().expect("failed to flush stdout");
+        // io::stdin()
+        //     .read_line(&mut buf)
+        //     .expect("failed to read input");
+        buf = read_input("  ") + &"\n";
         body += &buf;
         if buf.trim().is_empty() {
             empty_count += 1;
@@ -433,7 +437,7 @@ pub fn read_body(prompts: &Prompts) -> String {
 }
 
 /// Prints the real body part of an email, ignores useless headers.
-pub fn print_email_body(email: String, prompts: &Prompts) {
+pub fn print_body(email: String, prompts: &Prompts) {
     println!("{}", prompts.fetch_message_succeed);
     println!("{}", prompts.horizontal);
     let mut body = false;
