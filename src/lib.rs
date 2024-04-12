@@ -63,7 +63,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
-    eua_exit: "> 按下 `Enter` 键以退出...",
+    eua_exit: "> 按下 `Enter` 键退出...",
     login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
     login_email: "  邮箱地址: ",
     login_password: "  SMTP/IMAP 授权码 (不是邮箱密码): ",
@@ -347,7 +347,7 @@ impl User {
         imap_cli.select(inboxes[inbox].clone())?;
 
         // Fetch the first message
-        // todo: list all available emails to choose from
+        // todo: list all available messages to choose from
         let messages = imap_cli.fetch("1", "RFC822")?;
         let message = if let Some(m) = messages.iter().next() {
             m
@@ -357,6 +357,7 @@ impl User {
         };
 
         // Parse `Body`
+        // todo: support non-ASCII characters
         let body = message.body().expect("message did not have a body!");
         let body = str::from_utf8(body)
             .expect("message was not valid utf-8")
@@ -418,11 +419,6 @@ pub fn read_body(prompts: &Prompts) -> String {
 
     let mut empty_count = 0;
     while empty_count < 2 {
-        // print!("  ");
-        // io::stdout().flush().expect("failed to flush stdout");
-        // io::stdin()
-        //     .read_line(&mut buf)
-        //     .expect("failed to read input");
         buf = read_input("  ") + &"\n";
         body += &buf;
         if buf.trim().is_empty() {
@@ -446,8 +442,8 @@ pub fn print_body(email: String, prompts: &Prompts) {
         if line.starts_with("From: ") {
             body = true;
         }
-        // Ignore "Content" headers
-        if body && !line.starts_with("Content") {
+        // Ignore "Content" & "To" headers
+        if body && !(line.starts_with("Content") || line.starts_with("To")) {
             println!("  {}", line);
         }
     }
