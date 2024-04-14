@@ -45,7 +45,7 @@ pub struct Prompts {
     pub send_reconfirm_invalid: &'static str,
     pub send_sending: &'static str,
     pub send_succeed: &'static str,
-    pub send_canceled: &'static str,
+    pub send_cancel: &'static str,
     pub send_fail: &'static str,
     pub fetch_mailbox: &'static str,
     pub fetch_mailbox_selection: &'static str,
@@ -92,7 +92,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     send_reconfirm_invalid: "! 无效确认: 应为 \"yes\" 或 \"no\".",
     send_sending: "> 正在发送...",
     send_succeed: "✓ 你的邮件已发至 ",
-    send_canceled: "> 发送已取消.",
+    send_cancel: "> 发送已取消.",
     send_fail: "! 发送失败: ",
     fetch_mailbox: "> 正在获取收件箱...",
     fetch_mailbox_selection: "  选择收件箱: ",
@@ -139,7 +139,7 @@ const PROMPTS_EN: Prompts = Prompts {
     send_reconfirm_invalid: "! Invalid confirmation: should be \"yes\" or \"no\".",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
-    send_canceled: "> Sending canceled.",
+    send_cancel: "> Sending canceled.",
     send_fail: "! Failed to send message: ",
     fetch_mailbox: "> Fetching mailboxes...",
     fetch_mailbox_selection: "  Select a mailbox: ",
@@ -276,7 +276,7 @@ impl User {
     ///     - A `Some` containing the receiver's email address if sending succeeds.
     ///     - A `None` if the user cancels sending during reconfirmation.
     /// - An `Error` if it fails.
-    pub fn compose(
+    pub fn compose_and_send(
         &self,
         smtp_cli: &SmtpTransport,
         prompts: &Prompts,
