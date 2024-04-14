@@ -87,7 +87,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     send_reconfirm: "\
 > 再次确认:
   [yes] 确认发送
-  [no] 取消发送
+  [no]  取消发送
   确认: ",
     send_reconfirm_invalid: "! 无效确认: 应为 \"yes\" 或 \"no\".",
     send_sending: "> 正在发送...",
@@ -134,7 +134,7 @@ const PROMPTS_EN: Prompts = Prompts {
     send_reconfirm: "\
 > Reconfirmation:
   [yes] confirm sending
-  [no] cancel
+  [no]  cancel
   Confirm: ",
     send_reconfirm_invalid: "! Invalid confirmation: should be \"yes\" or \"no\".",
     send_sending: "> Sending...",
