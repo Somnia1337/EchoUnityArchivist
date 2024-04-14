@@ -1,6 +1,6 @@
 ! This README is outdated and currently waiting for update.
 
-[中文](https://github.com/Somnia1337/EchoUnityArchivist/blob/main/README-ZH.md)
+English | [中文](https://github.com/Somnia1337/EchoUnityArchivist/blob/main/README-ZH.md)
 
 # [EchoUnityArchivist](https://github.com/Somnia1337/EchoUnityArchivist)
 
