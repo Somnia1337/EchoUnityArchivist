@@ -18,26 +18,26 @@ fn main() {
 
     // Login to SMTP & IMAP servers and get clients
     println!("{}", prompts.login);
-    let mut user = User::build(&prompts);
-    let smtp_cli = user.login_smtp(&prompts);
-    let mut imap_cli = user.login_imap(&prompts);
+    let mut user = User::build(prompts);
+    let smtp_cli = user.login_smtp(prompts);
+    let mut imap_cli = user.login_imap(prompts);
     println!("{}{}.", prompts.login_succeed, user.email);
 
     // Perform user actions
     loop {
         match read_selection(prompts.action_selection, prompts.action_invalid, 0, 2) {
             0 => break,
-            1 => match user.compose_and_send(&smtp_cli, &prompts) {
+            1 => match user.compose_and_send(&smtp_cli, prompts) {
                 Ok(receiver) => match receiver {
                     None => println!("{}", prompts.send_cancel),
                     Some(to) => println!("{}{}.", prompts.send_succeed, to),
                 },
                 Err(e) => println!("{}{:?}", prompts.send_fail, e),
             },
-            2 => match user.fetch_message(&mut imap_cli, &prompts) {
+            2 => match user.fetch_message(&mut imap_cli, prompts) {
                 Ok(message_body) => match message_body {
                     None => {}
-                    Some(body) => print_body(body, &prompts),
+                    Some(body) => print_body(body, prompts),
                 },
                 Err(e) => println!("{}{:?}", prompts.fetch_message_fail, e),
             },

@@ -199,7 +199,7 @@ impl User {
                         e.source().unwrap()
                     );
                     println!("{}", prompts.login_retry);
-                    *self = User::build(&prompts);
+                    *self = User::build(prompts);
                 }
             }
         }
@@ -224,7 +224,7 @@ impl User {
                         e.source().unwrap()
                     );
                     println!("{}", prompts.login_retry);
-                    *self = User::build(&prompts);
+                    *self = User::build(prompts);
                 }
             }
         }
@@ -293,13 +293,13 @@ impl User {
             .to(to.clone())
             .subject(read_input(prompts.compose_subject))
             .header(ContentType::TEXT_PLAIN)
-            .body(read_body(&prompts))
+            .body(read_body(prompts))
             .unwrap();
         println!("{}", prompts.horizontal);
         println!("{}", prompts.compose_editing_finish);
 
         // Reconfirm
-        if !read_reconfirmation(&prompts) {
+        if !read_reconfirmation(prompts) {
             return Ok(None);
         }
 
@@ -329,7 +329,7 @@ impl User {
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
             .into_iter()
-            .filter(|&s| !s.name().contains("&"))
+            .filter(|&s| !s.name().contains('&'))
             .map(|s| s.name().to_string())
             .collect::<Vec<_>>();
         for (i, inbox) in inboxes.iter().enumerate() {
@@ -419,7 +419,7 @@ pub fn read_body(prompts: &Prompts) -> String {
 
     let mut empty_count = 0;
     while empty_count < 2 {
-        buf = read_input("  ") + &"\n";
+        buf = read_input("  ") + "\n";
         body += &buf;
         if buf.trim().is_empty() {
             empty_count += 1;
@@ -437,7 +437,7 @@ pub fn print_body(email: String, prompts: &Prompts) {
     println!("{}", prompts.fetch_message_succeed);
     println!("{}", prompts.horizontal);
     let mut body = false;
-    for line in email.lines().into_iter() {
+    for line in email.lines() {
         // Real body starts at line "From: "
         if line.starts_with("From: ") {
             body = true;
