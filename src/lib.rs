@@ -1,13 +1,11 @@
-use imap::{self, Session};
+use imap::{self, Connection, Session};
 use lettre::{
     message::header::ContentType, message::Mailbox, transport::smtp::authentication::Credentials,
     Message, SmtpTransport, Transport,
 };
-use native_tls::{self, TlsConnector, TlsStream};
 use std::{
     error::Error,
     io::{self, Write},
-    net::TcpStream,
     str,
 };
 
@@ -59,7 +57,7 @@ pub struct Prompts {
 const PROMPTS_ZH: Prompts = Prompts {
     horizontal: "  -------------------------------------",
     email_invalid: "! 无效邮箱地址: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家————你的 📧 用户代理.",
+    eua_welcome: "> 谐声收藏家 0.8.0 ———— 你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
@@ -106,7 +104,7 @@ const PROMPTS_ZH: Prompts = Prompts {
 const PROMPTS_EN: Prompts = Prompts {
     horizontal: "  -------------------------------------",
     email_invalid: "! Invalid email, please check and try again.",
-    eua_welcome: "> Echo Unity Archivist - your 📧 user agent.",
+    eua_welcome: "> Echo Unity Archivist 0.8.0 - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
     eua_logout_fail: "! Failed to logout: ",
@@ -208,7 +206,7 @@ impl User {
     /// Logins to IMAP server with user's credentials.
     ///
     /// Returns a `Session<TlsStream<TcpStream>>` as an IMAP server.
-    pub fn login_imap(&mut self, prompts: &Prompts) -> Session<TlsStream<TcpStream>> {
+    pub fn login_imap(&mut self, prompts: &Prompts) -> Session<Connection> {
         loop {
             println!("{}{}...", prompts.login_connecting, self.imap_domain);
             match self.connect_imap() {
@@ -256,11 +254,9 @@ impl User {
     ///
     /// - A `Session<TlsStream<TcpStream>>` if the connection succeeds.
     /// - An `Err` if the connection fails.
-    fn connect_imap(&self) -> imap::error::Result<Session<TlsStream<TcpStream>>> {
+    fn connect_imap(&self) -> imap::error::Result<Session<Connection>> {
         let domain = self.imap_domain.as_str();
-        let tls = TlsConnector::builder().build().unwrap();
-
-        let imap_cli = imap::connect((domain, 993), domain, &tls).unwrap();
+        let imap_cli = imap::ClientBuilder::new(domain, 993).connect().unwrap();
 
         match imap_cli.login(self.email.clone(), self.password.clone()) {
             Ok(session) => Ok(session),
@@ -321,14 +317,14 @@ impl User {
     /// - An `Err` if it fails.
     pub fn fetch_message(
         &self,
-        imap_cli: &mut Session<TlsStream<TcpStream>>,
+        imap_cli: &mut Session<Connection>,
         prompts: &Prompts,
     ) -> imap::error::Result<Option<String>> {
         // Fetch available inboxes from IMAP server
         println!("{}", prompts.fetch_mailbox);
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
-            .into_iter()
+            .iter()
             .filter(|&s| !s.name().contains('&'))
             .map(|s| s.name().to_string())
             .collect::<Vec<_>>();
