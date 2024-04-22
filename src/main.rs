@@ -13,10 +13,10 @@ fn main() {
         _ => unreachable!(),
     };
 
-    // Welcome
+    // Welcome message
     println!("{}", prompts.eua_welcome);
 
-    // Login to SMTP & IMAP servers and get clients
+    // Login to SMTP & IMAP servers to build clients
     println!("{}", prompts.login);
     let mut user = User::build(prompts);
     let smtp_cli = user.login_smtp(prompts);
