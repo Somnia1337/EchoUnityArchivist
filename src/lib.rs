@@ -60,7 +60,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     horizontal_start: "  ----------------邮件开始----------------",
     horizontal_end: "  ----------------邮件结束----------------",
     email_addr_invalid: "! 无效邮箱地址: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家 0.8.1 ———— 你的 📧 用户代理.",
+    eua_welcome: "> 谐声收藏家 0.8.2 ———— 你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
@@ -108,7 +108,7 @@ const PROMPTS_EN: Prompts = Prompts {
     horizontal_start: "  ----------------message starts----------------",
     horizontal_end: "  -----------------message ends-----------------",
     email_addr_invalid: "! Invalid email: please check and try again.",
-    eua_welcome: "> Echo Unity Archivist 0.8.1 - your 📧 user agent.",
+    eua_welcome: "> Echo Unity Archivist 0.8.2 - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
     eua_logout_fail: "! Failed to logout: ",
@@ -194,7 +194,7 @@ impl User {
                     return transport;
                 }
                 Err(e) => {
-                    println!(
+                    eprintln!(
                         "{}{}: {:?}",
                         prompts.login_connect_fail,
                         self.smtp_domain,
@@ -219,7 +219,7 @@ impl User {
                     return session;
                 }
                 Err(e) => {
-                    println!(
+                    eprintln!(
                         "{}{}: {:?}",
                         prompts.login_connect_fail,
                         self.imap_domain,
@@ -389,7 +389,7 @@ pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Address {
     loop {
         match read_input(prompt_read).trim().parse().ok() {
             Some(x) => return x,
-            _ => println!("{}", prompt_invalid),
+            _ => eprintln!("{}", prompt_invalid),
         }
     }
 }
@@ -407,9 +407,9 @@ pub fn read_selection(
             Some(x) if x >= lo && x <= hi => return x,
             _ => {
                 if tailed {
-                    println!("{}{}.", prompt_invalid, hi);
+                    eprintln!("{}{}.", prompt_invalid, hi);
                 } else {
-                    println!("{}", prompt_invalid);
+                    eprintln!("{}", prompt_invalid);
                 }
             }
         }
@@ -423,7 +423,7 @@ pub fn read_reconfirmation(prompts: &Prompts) -> bool {
         if matches!(input.as_str(), "yes" | "no") {
             return input == "yes";
         } else {
-            println!("{}", prompts.send_reconfirm_invalid);
+            eprintln!("{}", prompts.send_reconfirm_invalid);
         }
     }
 }
