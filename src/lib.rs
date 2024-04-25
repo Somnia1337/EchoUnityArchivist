@@ -184,7 +184,9 @@ impl User {
 
     /// Logins to SMTP server with user's credentials.
     ///
-    /// Returns an `SmtpTransport` as an SMTP client.
+    /// # Returns
+    ///
+    /// An `SmtpTransport` as the SMTP client.
     pub fn login_smtp(&mut self, prompts: &Prompts) -> SmtpTransport {
         loop {
             println!("{}{}...", prompts.login_connecting, self.smtp_domain);
@@ -209,7 +211,9 @@ impl User {
 
     /// Logins to IMAP server with user's credentials.
     ///
-    /// Returns a `Session<Connection>` as an IMAP server.
+    /// # Returns
+    ///
+    /// A `Session<Connection>` as the IMAP client.
     pub fn login_imap(&mut self, prompts: &Prompts) -> Session<Connection> {
         loop {
             println!("{}{}...", prompts.login_connecting, self.imap_domain);

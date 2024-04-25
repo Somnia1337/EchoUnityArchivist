@@ -44,7 +44,7 @@ fn main() {
                 },
                 Err(e) => println!("{}{:?}", prompts.fetch_message_fail, e),
             },
-            _ => unreachable!(), // selection from `read_selection` should have matched one of the above
+            _ => unreachable!(), // selection from `read_selection()` should have matched one of the above
         }
     }
 
