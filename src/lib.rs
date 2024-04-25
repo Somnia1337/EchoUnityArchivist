@@ -1,12 +1,13 @@
-use imap::{self, Connection, Session};
-use lettre::{
-    message::header::ContentType, message::Mailbox, transport::smtp::authentication::Credentials,
-    Message, SmtpTransport, Transport,
-};
 use std::{
     error::Error,
     io::{self, Write},
     str,
+};
+
+use imap::{self, Connection, Session};
+use lettre::{
+    message::header::ContentType, message::Mailbox, transport::smtp::authentication::Credentials,
+    Address, Message, SmtpTransport, Transport,
 };
 
 /// Represents a natural language for CLI.
@@ -17,15 +18,16 @@ pub enum Lang {
 
 /// Contains all prompts for getting user input.
 pub struct Prompts {
-    pub horizontal: &'static str,
-    pub email_invalid: &'static str,
+    pub horizontal_start: &'static str,
+    pub horizontal_end: &'static str,
+    pub email_addr_invalid: &'static str,
     pub eua_welcome: &'static str,
     pub eua_logging_out: &'static str,
     pub eua_logout_succeed: &'static str,
     pub eua_logout_fail: &'static str,
     pub eua_exit: &'static str,
     pub login: &'static str,
-    pub login_email: &'static str,
+    pub login_email_addr: &'static str,
     pub login_password: &'static str,
     pub login_connecting: &'static str,
     pub login_connect_succeed: &'static str,
@@ -55,15 +57,16 @@ pub struct Prompts {
 
 /// A `Prompts` constant containing all prompts in Chinese-Simplified.
 const PROMPTS_ZH: Prompts = Prompts {
-    horizontal: "  -------------------------------------",
-    email_invalid: "! 无效邮箱地址: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家 0.8.0 ———— 你的 📧 用户代理.",
+    horizontal_start: "  ----------------邮件开始----------------",
+    horizontal_end: "  ----------------邮件结束----------------",
+    email_addr_invalid: "! 无效邮箱地址: 请检查并重新输入.",
+    eua_welcome: "> 谐声收藏家 0.8.1 ———— 你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
     eua_exit: "> 按下 `Enter` 键退出...",
     login: "> 在与 SMTP/IMAP 服务器交互之前, 必须登录.",
-    login_email: "  邮箱地址: ",
+    login_email_addr: "  邮箱地址: ",
     login_password: "  SMTP/IMAP 授权码 (不是邮箱密码): ",
     login_connecting: "> 正在连接 ",
     login_connect_succeed: "✓ 已连接到 ",
@@ -102,15 +105,16 @@ const PROMPTS_ZH: Prompts = Prompts {
 
 /// A `Prompts` constant containing all prompts in English.
 const PROMPTS_EN: Prompts = Prompts {
-    horizontal: "  -------------------------------------",
-    email_invalid: "! Invalid email, please check and try again.",
-    eua_welcome: "> Echo Unity Archivist 0.8.0 - your 📧 user agent.",
+    horizontal_start: "  ----------------message starts----------------",
+    horizontal_end: "  -----------------message ends-----------------",
+    email_addr_invalid: "! Invalid email: please check and try again.",
+    eua_welcome: "> Echo Unity Archivist 0.8.1 - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
     eua_logout_fail: "! Failed to logout: ",
     eua_exit: "> Press `Enter` to exit...",
     login: "> Login is required before interacting with the SMTP/IMAP server.",
-    login_email: "  Email address: ",
+    login_email_addr: "  Email address: ",
     login_password: "  SMTP/IMAP password (not email password): ",
     login_connecting: "> Connecting to ",
     login_connect_succeed: "✓ Connected to ",
@@ -133,7 +137,7 @@ const PROMPTS_EN: Prompts = Prompts {
 > Reconfirmation:
   [yes] confirm sending
   [no]  cancel
-  Confirm: ",
+  Confirmation: ",
     send_reconfirm_invalid: "! Invalid confirmation: should be \"yes\" or \"no\".",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
@@ -159,21 +163,21 @@ pub fn get_prompts(lang: &Lang) -> &'static Prompts {
 pub struct User {
     pub smtp_domain: String,
     pub imap_domain: String,
-    pub email: String,
+    pub email_addr: Address,
     password: String,
 }
 
 impl User {
     /// Constructs a new `User` from user input.
     pub fn build(prompts: &Prompts) -> User {
-        let email = read_email(prompts.login_email, prompts.email_invalid).to_string();
+        let email = read_email(prompts.login_email_addr, prompts.email_addr_invalid);
         let password = read_input(prompts.login_password);
-        let domain = &email[email.find('@').unwrap() + 1..];
+        let domain = email.domain();
 
         User {
             smtp_domain: format!("smtp.{}", domain),
             imap_domain: format!("imap.{}", domain),
-            email,
+            email_addr: email,
             password,
         }
     }
@@ -205,7 +209,7 @@ impl User {
 
     /// Logins to IMAP server with user's credentials.
     ///
-    /// Returns a `Session<TlsStream<TcpStream>>` as an IMAP server.
+    /// Returns a `Session<Connection>` as an IMAP server.
     pub fn login_imap(&mut self, prompts: &Prompts) -> Session<Connection> {
         loop {
             println!("{}{}...", prompts.login_connecting, self.imap_domain);
@@ -238,7 +242,10 @@ impl User {
         // Open a remote connection to server
         let smtp_cli = SmtpTransport::relay(self.smtp_domain.as_str())
             .unwrap()
-            .credentials(Credentials::new(self.email.clone(), self.password.clone()))
+            .credentials(Credentials::new(
+                self.email_addr.clone().to_string(),
+                self.password.clone(),
+            ))
             .build();
 
         // Connectivity test & return
@@ -252,13 +259,13 @@ impl User {
     ///
     /// # Returns
     ///
-    /// - A `Session<TlsStream<TcpStream>>` if the connection succeeds.
+    /// - A `Session<Connection>` if the connection succeeds.
     /// - An `Err` if the connection fails.
     fn connect_imap(&self) -> imap::error::Result<Session<Connection>> {
         let domain = self.imap_domain.as_str();
         let imap_cli = imap::ClientBuilder::new(domain, 993).connect().unwrap();
 
-        match imap_cli.login(self.email.clone(), self.password.clone()) {
+        match imap_cli.login(self.email_addr.clone(), self.password.clone()) {
             Ok(session) => Ok(session),
             Err(e) => Err(e.0),
         }
@@ -278,20 +285,20 @@ impl User {
         prompts: &Prompts,
     ) -> Result<Option<String>, Box<dyn Error>> {
         println!("{}", prompts.compose_new_message);
-        println!("{}", prompts.horizontal);
+        println!("{}", prompts.horizontal_start);
 
         // Read & save `to` for returning
-        let to = read_email(prompts.compose_to, prompts.email_invalid);
+        let to = read_email(prompts.compose_to, prompts.email_addr_invalid);
 
         // Build the message
         let email = Message::builder()
-            .from(self.email.clone().parse().unwrap())
-            .to(to.clone())
+            .from(Mailbox::from(self.email_addr.clone()))
+            .to(Mailbox::from(to.clone()))
             .subject(read_input(prompts.compose_subject))
             .header(ContentType::TEXT_PLAIN)
             .body(read_body(prompts))
             .unwrap();
-        println!("{}", prompts.horizontal);
+        println!("{}", prompts.horizontal_end);
         println!("{}", prompts.compose_editing_finish);
 
         // Reconfirm
@@ -339,6 +346,7 @@ impl User {
             prompts.fetch_mailbox_invalid,
             1,
             size,
+            true,
         ) - 1;
         imap_cli.select(inboxes[inbox].clone())?;
 
@@ -363,7 +371,7 @@ impl User {
     }
 }
 
-/// Reads user input from command line, with customized prompt.
+/// Reads user input from command line, with a customized prompt.
 pub fn read_input(prompt: &str) -> String {
     print!("{}", prompt);
     io::stdout().flush().expect("failed to flush stdout");
@@ -377,7 +385,7 @@ pub fn read_input(prompt: &str) -> String {
 }
 
 /// Prompt the user to enter an email address, loops until a valid value is provided.
-pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Mailbox {
+pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Address {
     loop {
         match read_input(prompt_read).trim().parse().ok() {
             Some(x) => return x,
@@ -386,16 +394,29 @@ pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Mailbox {
     }
 }
 
-/// Prompt the user to enter a selection, loops until a valid value is provided.
-pub fn read_selection(prompt_read: &str, prompt_invalid: &str, lo: usize, hi: usize) -> usize {
+/// Prompt the user to enter a selection of `usize`, loops until a valid value is provided.
+pub fn read_selection(
+    prompt_read: &str,
+    prompt_invalid: &str,
+    lo: usize,
+    hi: usize,
+    tailed: bool,
+) -> usize {
     loop {
         match read_input(prompt_read).trim().parse().ok() {
             Some(x) if x >= lo && x <= hi => return x,
-            _ => println!("{}{}.", prompt_invalid, hi),
+            _ => {
+                if tailed {
+                    println!("{}{}.", prompt_invalid, hi);
+                } else {
+                    println!("{}", prompt_invalid);
+                }
+            }
         }
     }
 }
 
+/// Prompt the user to enter the reconfirmation for sending a message, loops until a valid value is provided.
 pub fn read_reconfirmation(prompts: &Prompts) -> bool {
     loop {
         let input = read_input(prompts.send_reconfirm).to_lowercase();
@@ -431,7 +452,7 @@ pub fn read_body(prompts: &Prompts) -> String {
 /// Prints the real body part of an email, ignores useless headers.
 pub fn print_body(email: String, prompts: &Prompts) {
     println!("{}", prompts.fetch_message_succeed);
-    println!("{}", prompts.horizontal);
+    println!("{}", prompts.horizontal_start);
     let mut body = false;
     for line in email.lines() {
         // Real body starts at line "From: "
@@ -443,5 +464,5 @@ pub fn print_body(email: String, prompts: &Prompts) {
             println!("  {}", line);
         }
     }
-    println!("{}", prompts.horizontal);
+    println!("{}", prompts.horizontal_end);
 }

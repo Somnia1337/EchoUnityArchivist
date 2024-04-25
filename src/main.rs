@@ -6,8 +6,11 @@ fn main() {
 > 语言 Languages:
   [1] 简体中文
   [2] English
-  选择语言 Select a language: ";
-    let prompts = match read_selection(lang_selection, "! 必须为 Must be 1 / ", 1, 2) {
+  设置语言 Set language: ";
+    let lang_selection_invalid = "\
+! 无效语言: 必须为 1 或 2.
+  Invalid language: must be 1 or 2.";
+    let prompts = match read_selection(lang_selection, lang_selection_invalid, 1, 2, false) {
         1 => get_prompts(&Lang::ZH),
         2 => get_prompts(&Lang::EN),
         _ => unreachable!(),
@@ -21,11 +24,11 @@ fn main() {
     let mut user = User::build(prompts);
     let smtp_cli = user.login_smtp(prompts);
     let mut imap_cli = user.login_imap(prompts);
-    println!("{}{}.", prompts.login_succeed, user.email);
+    println!("{}{}.", prompts.login_succeed, user.email_addr);
 
     // Perform user actions
     loop {
-        match read_selection(prompts.action_selection, prompts.action_invalid, 0, 2) {
+        match read_selection(prompts.action_selection, prompts.action_invalid, 0, 2, true) {
             0 => break,
             1 => match user.compose_and_send(&smtp_cli, prompts) {
                 Ok(receiver) => match receiver {
@@ -41,7 +44,7 @@ fn main() {
                 },
                 Err(e) => println!("{}{:?}", prompts.fetch_message_fail, e),
             },
-            _ => unreachable!(), // selection from `read_selection` should have matched above
+            _ => unreachable!(), // selection from `read_selection` should have matched one of the above
         }
     }
 
