@@ -18,6 +18,8 @@ pub enum Lang {
 
 /// Contains all prompts for getting user input.
 pub struct Prompts {
+    pub invalid_literal: &'static str,
+    pub should_be_one_of_below_literal: &'static str,
     pub horizontal_start: &'static str,
     pub horizontal_end: &'static str,
     pub email_addr_invalid: &'static str,
@@ -34,33 +36,35 @@ pub struct Prompts {
     pub login_connect_fail: &'static str,
     pub login_succeed: &'static str,
     pub login_retry: &'static str,
+    pub action_literal: &'static str,
     pub action_selection: &'static str,
-    pub action_invalid: &'static str,
     pub compose_new_message: &'static str,
     pub compose_to: &'static str,
     pub compose_subject: &'static str,
     pub compose_content: &'static str,
     pub compose_editing_finish: &'static str,
+    pub send_confirm_literal: &'static str,
     pub send_reconfirm: &'static str,
-    pub send_reconfirm_invalid: &'static str,
     pub send_sending: &'static str,
     pub send_succeed: &'static str,
     pub send_cancel: &'static str,
     pub send_fail: &'static str,
-    pub fetch_mailbox: &'static str,
-    pub fetch_mailbox_selection: &'static str,
-    pub fetch_mailbox_invalid: &'static str,
+    pub fetch_inbox_literal: &'static str,
+    pub fetch_inbox: &'static str,
+    pub fetch_inbox_selection: &'static str,
     pub fetch_message_succeed: &'static str,
-    pub fetch_mailbox_empty: &'static str,
+    pub fetch_inbox_empty: &'static str,
     pub fetch_message_fail: &'static str,
 }
 
 /// A `Prompts` constant containing all prompts in Chinese-Simplified.
 const PROMPTS_ZH: Prompts = Prompts {
+    invalid_literal: "! 无效",
+    should_be_one_of_below_literal: "应为下列值之一",
     horizontal_start: "  ----------------邮件开始----------------",
     horizontal_end: "  ----------------邮件结束----------------",
     email_addr_invalid: "! 无效邮箱地址: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家 0.8.3 ———— 你的 📧 用户代理.",
+    eua_welcome: "> 谐声收藏家 0.8.4 ———— 你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
@@ -73,48 +77,44 @@ const PROMPTS_ZH: Prompts = Prompts {
     login_connect_fail: "! 无法连接 ",
     login_succeed: "> 欢迎回来, ",
     login_retry: "> 重新尝试登录.",
+    action_literal: "操作",
     action_selection: "\
 > 操作:
   [0] 登出 & 关闭
   [1] 写信
   [2] 收信
   选择操作: ",
-    action_invalid: "\
-! 无效操作: 应为下列值之一
-  ",
     compose_new_message: "> 新邮件:",
     compose_to: "  收件人: ",
     compose_subject: "  主题: ",
     compose_content: "  正文 (连续输入 2 个空行以完成编辑):",
     compose_editing_finish: "> 你已完成编辑.",
+    send_confirm_literal: "确认",
     send_reconfirm: "\
 > 再次确认:
   [yes] 确认发送
   [no]  取消发送
   确认: ",
-    send_reconfirm_invalid: "\
-! 无效确认: 应为下列值之一
-  ",
     send_sending: "> 正在发送...",
     send_succeed: "✓ 你的邮件已发至 ",
     send_cancel: "> 发送已取消.",
     send_fail: "! 发送失败: ",
-    fetch_mailbox: "> 正在获取收件箱...",
-    fetch_mailbox_selection: "  选择收件箱: ",
-    fetch_mailbox_invalid: "\
-! 无效收件箱: 应为下列值之一
-  ",
+    fetch_inbox_literal: "收件箱",
+    fetch_inbox: "> 正在获取收件箱...",
+    fetch_inbox_selection: "  选择收件箱: ",
     fetch_message_succeed: "✓ 收到邮件:",
-    fetch_mailbox_empty: " 里没有邮件.",
+    fetch_inbox_empty: " 里没有邮件.",
     fetch_message_fail: "! 读取失败: ",
 };
 
 /// A `Prompts` constant containing all prompts in English.
 const PROMPTS_EN: Prompts = Prompts {
+    invalid_literal: "! Invalid",
+    should_be_one_of_below_literal: "should be one of below",
     horizontal_start: "  ----------------message starts----------------",
     horizontal_end: "  -----------------message ends-----------------",
     email_addr_invalid: "! Invalid email: please check and try again.",
-    eua_welcome: "> Echo Unity Archivist 0.8.3 - your 📧 user agent.",
+    eua_welcome: "> Echo Unity Archivist 0.8.4 - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
     eua_logout_fail: "! Failed to logout: ",
@@ -127,39 +127,33 @@ const PROMPTS_EN: Prompts = Prompts {
     login_connect_fail: "! Failed to connect ",
     login_succeed: "> Welcome back, ",
     login_retry: "> Retry login.",
+    action_literal: "action",
     action_selection: "\
 > Actions:
   [0] Logout & quit
   [1] Compose
   [2] Fetch message
   Select an action: ",
-    action_invalid: "\
-! Invalid action: should be one of below
-  ",
     compose_new_message: "> New message:",
     compose_to: "  To: ",
     compose_subject: "  Subject: ",
     compose_content: "  Content (enter 2 empty lines in a row to finish editing):",
     compose_editing_finish: "> You have finished editing.",
+    send_confirm_literal: "confirmation",
     send_reconfirm: "\
 > Reconfirmation:
   [yes] confirm sending
   [no]  cancel
   Confirmation: ",
-    send_reconfirm_invalid: "\
-! Invalid confirmation: should be one of below
-  ",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
     send_cancel: "> Sending canceled.",
     send_fail: "! Failed to send message: ",
-    fetch_mailbox: "> Fetching mailboxes...",
-    fetch_mailbox_selection: "  Select a mailbox: ",
-    fetch_mailbox_invalid: "\
-! Invalid inbox: should be one of below
-  ",
+    fetch_inbox_literal: "inbox",
+    fetch_inbox: "> Fetching mailboxes...",
+    fetch_inbox_selection: "  Select a mailbox: ",
     fetch_message_succeed: "✓ Fetched message:",
-    fetch_mailbox_empty: " has no messages.",
+    fetch_inbox_empty: " has no messages.",
     fetch_message_fail: "! Failed to read message: ",
 };
 
@@ -171,37 +165,33 @@ pub fn get_prompts(lang: &Lang) -> &'static Prompts {
     }
 }
 
-pub trait DisplayValidValue {
+pub trait EnumerableValidValues {
     fn valid_values(&self) -> String;
 }
 
-#[derive(Clone, Copy)]
-pub struct Selection {
+pub struct NumberSelection {
     pub lo: usize,
     pub hi: usize,
 }
 
-impl DisplayValidValue for Selection {
+impl EnumerableValidValues for NumberSelection {
     fn valid_values(&self) -> String {
-        let mut valid = String::new();
-        valid.push('[');
-        for i in self.lo..self.hi {
-            valid.push_str(i.to_string().as_str());
-            valid.push_str(", ");
-        }
-        valid.push_str(self.hi.to_string().as_str());
-        valid.push(']');
-        valid
+        format!(
+            "[{}]",
+            (self.lo..=self.hi)
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     }
 }
 
-#[derive(Clone)]
 pub struct Confirmation {
     confirm: &'static str,
     cancel: &'static str,
 }
 
-impl DisplayValidValue for Confirmation {
+impl EnumerableValidValues for Confirmation {
     fn valid_values(&self) -> String {
         format!("[{}, {}]", self.confirm, self.cancel)
     }
@@ -385,7 +375,7 @@ impl User {
         prompts: &Prompts,
     ) -> imap::error::Result<Option<String>> {
         // Fetch available inboxes from IMAP server
-        println!("{}", prompts.fetch_mailbox);
+        println!("{}", prompts.fetch_inbox);
         let inboxes = imap_cli
             .list(Some(""), Some("*"))?
             .iter()
@@ -399,10 +389,11 @@ impl User {
         // Select inbox
         let size = inboxes.len();
         let inbox = read_selection(
-            prompts.fetch_mailbox_selection,
-            prompts.fetch_mailbox_invalid,
-            Selection { lo: 1, hi: size },
-            true,
+            prompts.fetch_inbox_selection,
+            prompts.invalid_literal,
+            prompts.fetch_inbox_literal,
+            prompts.should_be_one_of_below_literal,
+            &NumberSelection { lo: 1, hi: size },
         ) - 1;
         imap_cli.select(inboxes[inbox].clone())?;
 
@@ -412,7 +403,7 @@ impl User {
         let message = if let Some(m) = messages.iter().next() {
             m
         } else {
-            println!("> \"{}\"{}", inboxes[inbox], prompts.fetch_mailbox_empty);
+            println!("> \"{}\"{}", inboxes[inbox], prompts.fetch_inbox_empty);
             return Ok(None);
         };
 
@@ -454,19 +445,22 @@ pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Address {
 pub fn read_selection(
     prompt_read: &str,
     prompt_invalid: &str,
-    selection: Selection,
-    tailed: bool,
+    prompt_object: &str,
+    prompt_should_be: &str,
+    number_selection: &NumberSelection,
 ) -> usize {
     loop {
         match read_input(prompt_read).trim().parse::<usize>().ok() {
-            Some(x) if x >= selection.lo && x <= selection.hi => return x,
-            _ => {
-                if tailed {
-                    eprintln!("{}{}", prompt_invalid, selection.valid_values());
-                } else {
-                    eprintln!("{}", prompt_invalid);
-                }
-            }
+            Some(x) if x >= number_selection.lo && x <= number_selection.hi => return x,
+            _ => eprintln!(
+                "\
+{}{}: {}
+  {}",
+                prompt_invalid,
+                prompt_object,
+                prompt_should_be,
+                number_selection.valid_values()
+            ),
         }
     }
 }
@@ -479,8 +473,12 @@ pub fn read_reconfirmation(prompts: &Prompts, reconfirmation: &Confirmation) -> 
             return input == "yes";
         } else {
             eprintln!(
-                "{}{}",
-                prompts.send_reconfirm_invalid,
+                "\
+{}{}: {}
+  {}",
+                prompts.invalid_literal,
+                prompts.send_confirm_literal,
+                prompts.should_be_one_of_below_literal,
                 reconfirmation.valid_values()
             );
         }
