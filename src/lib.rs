@@ -49,11 +49,11 @@ pub struct Prompts {
     pub send_succeed: &'static str,
     pub send_cancel: &'static str,
     pub send_fail: &'static str,
-    pub fetch_inbox_literal: &'static str,
-    pub fetch_inbox: &'static str,
-    pub fetch_inbox_selection: &'static str,
+    pub fetch_mailbox_literal: &'static str,
+    pub fetch_mailbox: &'static str,
+    pub fetch_mailbox_selection: &'static str,
     pub fetch_message_succeed: &'static str,
-    pub fetch_inbox_empty: &'static str,
+    pub fetch_mailbox_empty: &'static str,
     pub fetch_message_fail: &'static str,
 }
 
@@ -99,11 +99,11 @@ const PROMPTS_ZH: Prompts = Prompts {
     send_succeed: "✓ 你的邮件已发至 ",
     send_cancel: "> 发送已取消.",
     send_fail: "! 发送失败: ",
-    fetch_inbox_literal: "收件箱",
-    fetch_inbox: "> 正在获取收件箱...",
-    fetch_inbox_selection: "  选择收件箱: ",
+    fetch_mailbox_literal: "收件箱",
+    fetch_mailbox: "> 正在获取收件箱...",
+    fetch_mailbox_selection: "  选择收件箱: ",
     fetch_message_succeed: "✓ 收到邮件:",
-    fetch_inbox_empty: " 里没有邮件.",
+    fetch_mailbox_empty: " 里没有邮件.",
     fetch_message_fail: "! 读取失败: ",
 };
 
@@ -149,11 +149,11 @@ const PROMPTS_EN: Prompts = Prompts {
     send_succeed: "✓ Your email has been sent to ",
     send_cancel: "> Sending canceled.",
     send_fail: "! Failed to send message: ",
-    fetch_inbox_literal: "inbox",
-    fetch_inbox: "> Fetching mailboxes...",
-    fetch_inbox_selection: "  Select a mailbox: ",
+    fetch_mailbox_literal: "inbox",
+    fetch_mailbox: "> Fetching mailboxes...",
+    fetch_mailbox_selection: "  Select a mailbox: ",
     fetch_message_succeed: "✓ Fetched message:",
-    fetch_inbox_empty: " has no messages.",
+    fetch_mailbox_empty: " has no messages.",
     fetch_message_fail: "! Failed to read message: ",
 };
 
@@ -361,7 +361,7 @@ impl User {
         }
     }
 
-    /// Fetches an email from a specific inbox on the imap server.
+    /// Fetches an email from a specific mailbox on the imap server.
     ///
     /// # Returns
     ///
@@ -374,28 +374,28 @@ impl User {
         imap_cli: &mut Session<Connection>,
         prompts: &Prompts,
     ) -> imap::error::Result<Option<String>> {
-        // Fetch available inboxes from IMAP server
-        println!("{}", prompts.fetch_inbox);
-        let inboxes = imap_cli
+        // Fetch available mailboxes from IMAP server
+        println!("{}", prompts.fetch_mailbox);
+        let mailboxes = imap_cli
             .list(Some(""), Some("*"))?
             .iter()
             .filter(|&s| !s.name().contains('&'))
             .map(|s| s.name().to_string())
             .collect::<Vec<_>>();
-        for (i, inbox) in inboxes.iter().enumerate() {
-            println!("  [{}] {}", i + 1, inbox);
+        for (i, mailbox) in mailboxes.iter().enumerate() {
+            println!("  [{}] {}", i + 1, mailbox);
         }
 
-        // Select inbox
-        let size = inboxes.len();
-        let inbox = read_selection(
-            prompts.fetch_inbox_selection,
+        // Select mailbox
+        let size = mailboxes.len();
+        let mailbox = read_selection(
+            prompts.fetch_mailbox_selection,
             prompts.invalid_literal,
-            prompts.fetch_inbox_literal,
+            prompts.fetch_mailbox_literal,
             prompts.should_be_one_of_below_literal,
             &NumberSelection { lo: 1, hi: size },
         ) - 1;
-        imap_cli.select(inboxes[inbox].clone())?;
+        imap_cli.select(mailboxes[mailbox].clone())?;
 
         // Fetch the first message
         // todo: list all available messages to choose from
@@ -403,7 +403,10 @@ impl User {
         let message = if let Some(m) = messages.iter().next() {
             m
         } else {
-            println!("> \"{}\"{}", inboxes[inbox], prompts.fetch_inbox_empty);
+            println!(
+                "> \"{}\"{}",
+                mailboxes[mailbox], prompts.fetch_mailbox_empty
+            );
             return Ok(None);
         };
 
