@@ -60,7 +60,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     horizontal_start: "  ----------------邮件开始----------------",
     horizontal_end: "  ----------------邮件结束----------------",
     email_addr_invalid: "! 无效邮箱地址: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家 0.8.2 ———— 你的 📧 用户代理.",
+    eua_welcome: "> 谐声收藏家 0.8.3 ———— 你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
@@ -79,7 +79,9 @@ const PROMPTS_ZH: Prompts = Prompts {
   [1] 写信
   [2] 收信
   选择操作: ",
-    action_invalid: "! 无效操作: 应为 0, 1 或 ",
+    action_invalid: "\
+! 无效操作: 应为下列值之一
+  ",
     compose_new_message: "> 新邮件:",
     compose_to: "  收件人: ",
     compose_subject: "  主题: ",
@@ -90,14 +92,18 @@ const PROMPTS_ZH: Prompts = Prompts {
   [yes] 确认发送
   [no]  取消发送
   确认: ",
-    send_reconfirm_invalid: "! 无效确认: 应为 \"yes\" 或 \"no\".",
+    send_reconfirm_invalid: "\
+! 无效确认: 应为下列值之一
+  ",
     send_sending: "> 正在发送...",
     send_succeed: "✓ 你的邮件已发至 ",
     send_cancel: "> 发送已取消.",
     send_fail: "! 发送失败: ",
     fetch_mailbox: "> 正在获取收件箱...",
     fetch_mailbox_selection: "  选择收件箱: ",
-    fetch_mailbox_invalid: "! 无效收件箱: 应为 1 到 ",
+    fetch_mailbox_invalid: "\
+! 无效收件箱: 应为下列值之一
+  ",
     fetch_message_succeed: "✓ 收到邮件:",
     fetch_mailbox_empty: " 里没有邮件.",
     fetch_message_fail: "! 读取失败: ",
@@ -108,7 +114,7 @@ const PROMPTS_EN: Prompts = Prompts {
     horizontal_start: "  ----------------message starts----------------",
     horizontal_end: "  -----------------message ends-----------------",
     email_addr_invalid: "! Invalid email: please check and try again.",
-    eua_welcome: "> Echo Unity Archivist 0.8.2 - your 📧 user agent.",
+    eua_welcome: "> Echo Unity Archivist 0.8.3 - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
     eua_logout_fail: "! Failed to logout: ",
@@ -127,7 +133,9 @@ const PROMPTS_EN: Prompts = Prompts {
   [1] Compose
   [2] Fetch message
   Select an action: ",
-    action_invalid: "! Invalid action: should be 0, 1 or ",
+    action_invalid: "\
+! Invalid action: should be one of below
+  ",
     compose_new_message: "> New message:",
     compose_to: "  To: ",
     compose_subject: "  Subject: ",
@@ -138,14 +146,18 @@ const PROMPTS_EN: Prompts = Prompts {
   [yes] confirm sending
   [no]  cancel
   Confirmation: ",
-    send_reconfirm_invalid: "! Invalid confirmation: should be \"yes\" or \"no\".",
+    send_reconfirm_invalid: "\
+! Invalid confirmation: should be one of below
+  ",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
     send_cancel: "> Sending canceled.",
     send_fail: "! Failed to send message: ",
     fetch_mailbox: "> Fetching mailboxes...",
     fetch_mailbox_selection: "  Select a mailbox: ",
-    fetch_mailbox_invalid: "! Invalid mailbox: should be in between 1 and ",
+    fetch_mailbox_invalid: "\
+! Invalid inbox: should be one of below
+  ",
     fetch_message_succeed: "✓ Fetched message:",
     fetch_mailbox_empty: " has no messages.",
     fetch_message_fail: "! Failed to read message: ",
@@ -158,6 +170,47 @@ pub fn get_prompts(lang: &Lang) -> &'static Prompts {
         Lang::ZH => &PROMPTS_ZH,
     }
 }
+
+pub trait DisplayValidValue {
+    fn valid_values(&self) -> String;
+}
+
+#[derive(Clone, Copy)]
+pub struct Selection {
+    pub lo: usize,
+    pub hi: usize,
+}
+
+impl DisplayValidValue for Selection {
+    fn valid_values(&self) -> String {
+        let mut valid = String::new();
+        valid.push('[');
+        for i in self.lo..self.hi {
+            valid.push_str(i.to_string().as_str());
+            valid.push_str(", ");
+        }
+        valid.push_str(self.hi.to_string().as_str());
+        valid.push(']');
+        valid
+    }
+}
+
+#[derive(Clone)]
+pub struct Confirmation {
+    confirm: &'static str,
+    cancel: &'static str,
+}
+
+impl DisplayValidValue for Confirmation {
+    fn valid_values(&self) -> String {
+        format!("[{}, {}]", self.confirm, self.cancel)
+    }
+}
+
+const RECONFIRMATION: Confirmation = Confirmation {
+    confirm: "yes",
+    cancel: "no",
+};
 
 /// Represents a user.
 pub struct User {
@@ -306,7 +359,7 @@ impl User {
         println!("{}", prompts.compose_editing_finish);
 
         // Reconfirm
-        if !read_reconfirmation(prompts) {
+        if !read_reconfirmation(prompts, &RECONFIRMATION) {
             return Ok(None);
         }
 
@@ -348,8 +401,7 @@ impl User {
         let inbox = read_selection(
             prompts.fetch_mailbox_selection,
             prompts.fetch_mailbox_invalid,
-            1,
-            size,
+            Selection { lo: 1, hi: size },
             true,
         ) - 1;
         imap_cli.select(inboxes[inbox].clone())?;
@@ -402,16 +454,15 @@ pub fn read_email(prompt_read: &str, prompt_invalid: &str) -> Address {
 pub fn read_selection(
     prompt_read: &str,
     prompt_invalid: &str,
-    lo: usize,
-    hi: usize,
+    selection: Selection,
     tailed: bool,
 ) -> usize {
     loop {
-        match read_input(prompt_read).trim().parse().ok() {
-            Some(x) if x >= lo && x <= hi => return x,
+        match read_input(prompt_read).trim().parse::<usize>().ok() {
+            Some(x) if x >= selection.lo && x <= selection.hi => return x,
             _ => {
                 if tailed {
-                    eprintln!("{}{}.", prompt_invalid, hi);
+                    eprintln!("{}{}", prompt_invalid, selection.valid_values());
                 } else {
                     eprintln!("{}", prompt_invalid);
                 }
@@ -421,13 +472,17 @@ pub fn read_selection(
 }
 
 /// Prompt the user to enter the reconfirmation for sending a message, loops until a valid value is provided.
-pub fn read_reconfirmation(prompts: &Prompts) -> bool {
+pub fn read_reconfirmation(prompts: &Prompts, reconfirmation: &Confirmation) -> bool {
     loop {
         let input = read_input(prompts.send_reconfirm).to_lowercase();
         if matches!(input.as_str(), "yes" | "no") {
             return input == "yes";
         } else {
-            eprintln!("{}", prompts.send_reconfirm_invalid);
+            eprintln!(
+                "{}{}",
+                prompts.send_reconfirm_invalid,
+                reconfirmation.valid_values()
+            );
         }
     }
 }

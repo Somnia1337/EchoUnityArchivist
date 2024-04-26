@@ -8,9 +8,14 @@ fn main() {
   [2] English
   设置语言 Set language: ";
     let lang_selection_invalid = "\
-! 无效语言: 必须为 1 或 2.
-  Invalid language: must be 1 or 2.";
-    let prompts = match read_selection(lang_selection, lang_selection_invalid, 1, 2, false) {
+! 无效语言 Invalid language: 应为下列值之一 should be one of below
+  [1, 2]";
+    let prompts = match read_selection(
+        lang_selection,
+        lang_selection_invalid,
+        Selection { lo: 1, hi: 2 },
+        false,
+    ) {
         1 => get_prompts(&Lang::ZH),
         2 => get_prompts(&Lang::EN),
         _ => unreachable!(),
@@ -26,9 +31,17 @@ fn main() {
     let mut imap_cli = user.login_imap(prompts);
     println!("{}{}.", prompts.login_succeed, user.email_addr);
 
+    // Build `Selection` for actions
+    let actions = Selection { lo: 0, hi: 2 };
+
     // Perform user actions
     loop {
-        match read_selection(prompts.action_selection, prompts.action_invalid, 0, 2, true) {
+        match read_selection(
+            prompts.action_selection,
+            prompts.action_invalid,
+            actions,
+            true,
+        ) {
             0 => break,
             1 => match user.compose_and_send(&smtp_cli, prompts) {
                 Ok(receiver) => match receiver {
