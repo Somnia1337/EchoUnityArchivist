@@ -16,7 +16,7 @@ pub enum Lang {
     ZH,
 }
 
-/// Contains all prompts for getting user input.
+/// Represents all prompts for getting user input.
 pub struct Prompts {
     pub invalid_literal: &'static str,
     pub should_be_one_of_below_literal: &'static str,
@@ -64,7 +64,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     horizontal_start: "  ----------------邮件开始----------------",
     horizontal_end: "  ----------------邮件结束----------------",
     email_addr_invalid: "! 无效邮箱地址: 请检查并重新输入.",
-    eua_welcome: "> 谐声收藏家 0.8.4 ———— 你的 📧 用户代理.",
+    eua_welcome: "> 谐声收藏家 0.8.5 - 你的 📧 用户代理.",
     eua_logging_out: "> 正在登出 ",
     eua_logout_succeed: "✓ 已登出.",
     eua_logout_fail: "! 登出失败: ",
@@ -114,7 +114,7 @@ const PROMPTS_EN: Prompts = Prompts {
     horizontal_start: "  ----------------message starts----------------",
     horizontal_end: "  -----------------message ends-----------------",
     email_addr_invalid: "! Invalid email: please check and try again.",
-    eua_welcome: "> Echo Unity Archivist 0.8.4 - your 📧 user agent.",
+    eua_welcome: "> Echo Unity Archivist 0.8.5 - your 📧 user agent.",
     eua_logging_out: "> Logging out from ",
     eua_logout_succeed: "✓ Logged out.",
     eua_logout_fail: "! Failed to logout: ",
@@ -165,10 +165,13 @@ pub fn get_prompts(lang: &Lang) -> &'static Prompts {
     }
 }
 
+/// Types whose valid values are enumerable.
 pub trait EnumerableValidValues {
+    /// Build a custom message representing valid values.
     fn valid_values(&self) -> String;
 }
 
+/// Represents a number (`usize`) selection, whose valid values are within a specific range.
 pub struct NumberSelection {
     pub lo: usize,
     pub hi: usize,
@@ -186,6 +189,7 @@ impl EnumerableValidValues for NumberSelection {
     }
 }
 
+/// Represents a confirmation message, with only 2 valid values: `confirm`, `cancel`.
 pub struct Confirmation {
     confirm: &'static str,
     cancel: &'static str,
