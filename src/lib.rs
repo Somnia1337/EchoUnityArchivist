@@ -93,8 +93,7 @@ const PROMPTS_ZH: Prompts = Prompts {
     send_reconfirm: "\
 > 再次确认:
   [yes] 确认发送
-  [no]  取消发送
-  确认: ",
+  [no]  取消发送",
     send_sending: "> 正在发送...",
     send_succeed: "✓ 你的邮件已发至 ",
     send_cancel: "> 发送已取消.",
@@ -143,8 +142,7 @@ const PROMPTS_EN: Prompts = Prompts {
     send_reconfirm: "\
 > Reconfirmation:
   [yes] confirm sending
-  [no]  cancel
-  Confirmation: ",
+  [no]  cancel",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
     send_cancel: "> Sending canceled.",
@@ -426,7 +424,8 @@ impl User {
 }
 
 /// Reads user input from command line, with a customized prompt.
-pub fn read_input(prompt: &str) -> String {
+pub fn read_input<T: Into<String>>(prompt: T) -> String {
+    let prompt = prompt.into();
     print!("{}", prompt);
     io::stdout().flush().expect("failed to flush stdout");
 
@@ -474,8 +473,9 @@ pub fn read_selection(
 
 /// Prompt the user to enter the reconfirmation for sending a message, loops until a valid value is provided.
 pub fn read_reconfirmation(prompts: &Prompts, reconfirmation: &Confirmation) -> bool {
+    println!("{}", prompts.send_reconfirm);
     loop {
-        let input = read_input(prompts.send_reconfirm).to_lowercase();
+        let input = read_input(format!("  {}:", prompts.send_confirm_literal)).to_lowercase();
         if matches!(input.as_str(), "yes" | "no") {
             return input == "yes";
         } else {
