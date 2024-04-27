@@ -2,11 +2,12 @@ use echo_unity_archivist::*;
 
 fn main() {
     // Select lang
-    let lang_selection = "\
+    let lang_list = "\
 > 语言 Languages:
   [1] 简体中文
-  [2] English
-  设置语言 Set language: ";
+  [2] English";
+    println!("{}", lang_list);
+    let lang_selection = "  设置语言 Set language: ";
     let prompts = match read_selection(
         lang_selection,
         "! 无效语言 Invalid language",
@@ -34,6 +35,7 @@ fn main() {
 
     // Perform user actions
     loop {
+        println!("{}", prompts.action_list);
         match read_selection(
             prompts.action_selection,
             prompts.invalid_literal,

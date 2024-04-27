@@ -37,6 +37,7 @@ pub struct Prompts {
     pub login_succeed: &'static str,
     pub login_retry: &'static str,
     pub action_literal: &'static str,
+    pub action_list: &'static str,
     pub action_selection: &'static str,
     pub compose_new_message: &'static str,
     pub compose_to: &'static str,
@@ -44,7 +45,8 @@ pub struct Prompts {
     pub compose_content: &'static str,
     pub compose_editing_finish: &'static str,
     pub send_confirm_literal: &'static str,
-    pub send_reconfirm: &'static str,
+    pub send_reconfirm_list: &'static str,
+    pub send_reconfirm_selection: &'static str,
     pub send_sending: &'static str,
     pub send_succeed: &'static str,
     pub send_cancel: &'static str,
@@ -78,22 +80,23 @@ const PROMPTS_ZH: Prompts = Prompts {
     login_succeed: "> 欢迎回来, ",
     login_retry: "> 重新尝试登录.",
     action_literal: "操作",
-    action_selection: "\
+    action_list: "\
 > 操作:
   [0] 登出 & 关闭
   [1] 写信
-  [2] 收信
-  选择操作: ",
+  [2] 收信",
+    action_selection: "  选择操作: ",
     compose_new_message: "> 新邮件:",
     compose_to: "  收件人: ",
     compose_subject: "  主题: ",
     compose_content: "  正文 (连续输入 2 个空行以完成编辑):",
     compose_editing_finish: "> 你已完成编辑.",
     send_confirm_literal: "确认",
-    send_reconfirm: "\
+    send_reconfirm_list: "\
 > 再次确认:
   [yes] 确认发送
   [no]  取消发送",
+    send_reconfirm_selection: "  确认: ",
     send_sending: "> 正在发送...",
     send_succeed: "✓ 你的邮件已发至 ",
     send_cancel: "> 发送已取消.",
@@ -127,22 +130,23 @@ const PROMPTS_EN: Prompts = Prompts {
     login_succeed: "> Welcome back, ",
     login_retry: "> Retry login.",
     action_literal: "action",
-    action_selection: "\
+    action_list: "\
 > Actions:
   [0] Logout & quit
   [1] Compose
-  [2] Fetch message
-  Select an action: ",
+  [2] Fetch message",
+    action_selection: "  Select an action: ",
     compose_new_message: "> New message:",
     compose_to: "  To: ",
     compose_subject: "  Subject: ",
     compose_content: "  Content (enter 2 empty lines in a row to finish editing):",
     compose_editing_finish: "> You have finished editing.",
     send_confirm_literal: "confirmation",
-    send_reconfirm: "\
+    send_reconfirm_list: "\
 > Reconfirmation:
   [yes] confirm sending
   [no]  cancel",
+    send_reconfirm_selection: "  Confirm: ",
     send_sending: "> Sending...",
     send_succeed: "✓ Your email has been sent to ",
     send_cancel: "> Sending canceled.",
@@ -424,8 +428,7 @@ impl User {
 }
 
 /// Reads user input from command line, with a customized prompt.
-pub fn read_input<T: Into<String>>(prompt: T) -> String {
-    let prompt = prompt.into();
+pub fn read_input(prompt: &str) -> String {
     print!("{}", prompt);
     io::stdout().flush().expect("failed to flush stdout");
 
@@ -473,9 +476,9 @@ pub fn read_selection(
 
 /// Prompt the user to enter the reconfirmation for sending a message, loops until a valid value is provided.
 pub fn read_reconfirmation(prompts: &Prompts, reconfirmation: &Confirmation) -> bool {
-    println!("{}", prompts.send_reconfirm);
+    println!("{}", prompts.send_reconfirm_list);
     loop {
-        let input = read_input(format!("  {}:", prompts.send_confirm_literal)).to_lowercase();
+        let input = read_input(prompts.send_reconfirm_selection).to_lowercase();
         if matches!(input.as_str(), "yes" | "no") {
             return input == "yes";
         } else {
