@@ -111,7 +111,7 @@ const PROMPTS_ZH: Prompts = Prompts {
 
 /// A `Prompts` constant containing all prompts in English.
 const PROMPTS_EN: Prompts = Prompts {
-    invalid_literal: "! Invalid",
+    invalid_literal: "! Invalid ",
     should_be_one_of_below_literal: "should be one of below",
     horizontal_start: "  ----------------message starts----------------",
     horizontal_end: "  -----------------message ends-----------------",
@@ -168,18 +168,18 @@ pub fn get_prompts(lang: &Lang) -> &'static Prompts {
 }
 
 /// Types whose valid values are enumerable.
-pub trait EnumerableValidValues {
+pub trait EnumValues {
     /// Build a custom message representing valid values.
     fn valid_values(&self) -> String;
 }
 
 /// Represents a number (`usize`) selection, whose valid values are within a specific range.
-pub struct NumberSelection {
+pub struct RangeUsize {
     pub lo: usize,
     pub hi: usize,
 }
 
-impl EnumerableValidValues for NumberSelection {
+impl EnumValues for RangeUsize {
     fn valid_values(&self) -> String {
         format!(
             "[{}]",
@@ -197,7 +197,7 @@ pub struct Confirmation {
     cancel: &'static str,
 }
 
-impl EnumerableValidValues for Confirmation {
+impl EnumValues for Confirmation {
     fn valid_values(&self) -> String {
         format!("[{}, {}]", self.confirm, self.cancel)
     }
@@ -296,8 +296,8 @@ impl User {
         let smtp_cli = SmtpTransport::relay(self.smtp_domain.as_str())
             .unwrap()
             .credentials(Credentials::new(
-                self.email_addr.clone().to_string(),
-                self.password.clone(),
+                (&self.email_addr).to_string(),
+                (&self.password).to_string(),
             ))
             .build();
 
@@ -318,7 +318,7 @@ impl User {
         let domain = self.imap_domain.as_str();
         let imap_cli = imap::ClientBuilder::new(domain, 993).connect().unwrap();
 
-        match imap_cli.login(self.email_addr.clone(), self.password.clone()) {
+        match imap_cli.login((&self.email_addr).to_string(), (&self.password).to_string()) {
             Ok(session) => Ok(session),
             Err(e) => Err(e.0),
         }
@@ -399,9 +399,9 @@ impl User {
             prompts.invalid_literal,
             prompts.fetch_mailbox_literal,
             prompts.should_be_one_of_below_literal,
-            &NumberSelection { lo: 1, hi: size },
+            &RangeUsize { lo: 1, hi: size },
         ) - 1;
-        imap_cli.select(mailboxes[mailbox].clone())?;
+        imap_cli.select(&mailboxes[mailbox])?;
 
         // Fetch the first message
         // todo: list all available messages to choose from
@@ -456,11 +456,11 @@ pub fn read_selection(
     prompt_invalid: &str,
     prompt_object: &str,
     prompt_should_be: &str,
-    number_selection: &NumberSelection,
+    range_usize: &RangeUsize,
 ) -> usize {
     loop {
         match read_input(prompt_read).trim().parse::<usize>().ok() {
-            Some(x) if x >= number_selection.lo && x <= number_selection.hi => return x,
+            Some(x) if x >= range_usize.lo && x <= range_usize.hi => return x,
             _ => eprintln!(
                 "\
 {}{}: {}
@@ -468,7 +468,7 @@ pub fn read_selection(
                 prompt_invalid,
                 prompt_object,
                 prompt_should_be,
-                number_selection.valid_values()
+                range_usize.valid_values()
             ),
         }
     }

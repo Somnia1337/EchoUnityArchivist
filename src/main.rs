@@ -13,7 +13,7 @@ fn main() {
         "! 无效语言 Invalid language",
         "",
         "应为下列值之一 should be one of below",
-        &NumberSelection { lo: 1, hi: 2 },
+        &RangeUsize { lo: 1, hi: 2 },
     ) {
         1 => get_prompts(&Lang::ZH),
         2 => get_prompts(&Lang::EN),
@@ -31,7 +31,7 @@ fn main() {
     println!("{}{}.", prompts.login_succeed, user.email_addr);
 
     // Build `Selection` for actions
-    let actions = NumberSelection { lo: 0, hi: 2 };
+    let actions = RangeUsize { lo: 0, hi: 2 };
 
     // Perform user actions
     loop {
