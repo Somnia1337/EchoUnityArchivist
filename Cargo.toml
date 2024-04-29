@@ -1,13 +1,13 @@
 [package]
 name = "echo_unity_archivist"
-version = "0.8.5"
+version = "0.8.7"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 imap = { version = "3.0.0-alpha.14" }
-lettre = { version = "0.11.6", default-features = false, features = ["builder", "smtp-transport", "native-tls"] }
+lettre = { version = "0.11.7", default-features = false, features = ["builder", "smtp-transport", "native-tls"] }
 native-tls = { version = "0.2.11" }
 
 [profile.release]
