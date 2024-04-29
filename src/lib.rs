@@ -54,8 +54,10 @@ pub struct Prompts {
     pub fetch_mailbox_literal: &'static str,
     pub fetch_mailbox: &'static str,
     pub fetch_mailbox_selection: &'static str,
-    pub fetch_message_succeed: &'static str,
     pub fetch_mailbox_empty: &'static str,
+    pub fetch_message_literal: &'static str,
+    pub fetch_message_list: &'static str,
+    pub fetch_message_selection: &'static str,
     pub fetch_message_fail: &'static str,
 }
 
@@ -104,8 +106,10 @@ const PROMPTS_ZH: Prompts = Prompts {
     fetch_mailbox_literal: "收件箱",
     fetch_mailbox: "> 正在获取收件箱...",
     fetch_mailbox_selection: "  选择收件箱: ",
-    fetch_message_succeed: "✓ 收到邮件:",
     fetch_mailbox_empty: " 里没有邮件.",
+    fetch_message_literal: "邮件",
+    fetch_message_list: "✓ 收到邮件:",
+    fetch_message_selection: "  选择邮件: ",
     fetch_message_fail: "! 读取失败: ",
 };
 
@@ -154,8 +158,10 @@ const PROMPTS_EN: Prompts = Prompts {
     fetch_mailbox_literal: "inbox",
     fetch_mailbox: "> Fetching mailboxes...",
     fetch_mailbox_selection: "  Select a mailbox: ",
-    fetch_message_succeed: "✓ Fetched message:",
     fetch_mailbox_empty: " has no messages.",
+    fetch_message_literal: "message",
+    fetch_message_list: "✓ Fetched message:",
+    fetch_message_selection: "  Select a message: ",
     fetch_message_fail: "! Failed to read message: ",
 };
 
@@ -296,8 +302,8 @@ impl User {
         let smtp_cli = SmtpTransport::relay(self.smtp_domain.as_str())
             .unwrap()
             .credentials(Credentials::new(
-                (&self.email_addr).to_string(),
-                (&self.password).to_string(),
+                self.email_addr.to_string(),
+                self.password.to_string(),
             ))
             .build();
 
@@ -318,7 +324,7 @@ impl User {
         let domain = self.imap_domain.as_str();
         let imap_cli = imap::ClientBuilder::new(domain, 993).connect().unwrap();
 
-        match imap_cli.login((&self.email_addr).to_string(), (&self.password).to_string()) {
+        match imap_cli.login(&self.email_addr, &self.password) {
             Ok(session) => Ok(session),
             Err(e) => Err(e.0),
         }
@@ -403,18 +409,52 @@ impl User {
         ) - 1;
         imap_cli.select(&mailboxes[mailbox])?;
 
-        // Fetch the first message
-        // todo: list all available messages to choose from
-        let messages = imap_cli.fetch("1", "RFC822")?;
-        let message = if let Some(m) = messages.iter().next() {
-            m
-        } else {
-            println!(
-                "> \"{}\"{}",
-                mailboxes[mailbox], prompts.fetch_mailbox_empty
-            );
-            return Ok(None);
-        };
+        // Fetch all messages in the mailbox and print their "Subject: " line
+        let mut i = 1;
+        loop {
+            let message = imap_cli.fetch(i.to_string(), "RFC822")?;
+            if message.is_empty() {
+                if i == 1 {
+                    println!(
+                        "> \"{}\"{}",
+                        mailboxes[mailbox], prompts.fetch_mailbox_empty
+                    );
+                    return Ok(None);
+                } else {
+                    break;
+                }
+            }
+            if i == 1 {
+                println!("{}", prompts.fetch_message_list);
+            }
+            let subject = message
+                .iter()
+                .flat_map(|m| {
+                    str::from_utf8(m.body().expect("message did not have a body!"))
+                        .unwrap()
+                        .lines()
+                        .map(String::from)
+                })
+                .find(|l| l.starts_with("Subject:"))
+                .map(|s| s[9..].to_string())
+                .unwrap();
+            println!("  [{}] {}", i, subject);
+            i += 1;
+        }
+
+        // Fetch the chosen message
+        let message = imap_cli.fetch(
+            read_selection(
+                prompts.fetch_message_selection,
+                prompts.invalid_literal,
+                prompts.fetch_message_literal,
+                prompts.should_be_one_of_below_literal,
+                &RangeUsize { lo: 1, hi: i - 1 },
+            )
+            .to_string(),
+            "RFC822",
+        )?;
+        let message = message.iter().next().unwrap();
 
         // Parse `Body`
         // todo: support non-ASCII characters
@@ -423,6 +463,7 @@ impl User {
             .expect("message was not valid utf-8")
             .to_string();
 
+        // Return message body
         Ok(Some(body))
     }
 }
@@ -518,7 +559,6 @@ pub fn read_body(prompts: &Prompts) -> String {
 
 /// Prints the real body part of an email, ignores useless headers.
 pub fn print_body(email: String, prompts: &Prompts) {
-    println!("{}", prompts.fetch_message_succeed);
     println!("{}", prompts.horizontal_start);
     let mut body = false;
     for line in email.lines() {
