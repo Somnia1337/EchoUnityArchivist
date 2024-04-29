@@ -1,3 +1,5 @@
+use echo_unity_archivist::types::*;
+use echo_unity_archivist::user::*;
 use echo_unity_archivist::*;
 
 fn main() {
@@ -8,12 +10,12 @@ fn main() {
   [2] English";
     println!("{}", lang_list);
     let lang_selection = "  设置语言 Set language: ";
-    let prompts = match read_selection(
+    let prompts = match read::read_selection(
         lang_selection,
         "! 无效语言 Invalid language",
         "",
         "应为下列值之一 should be one of below",
-        &RangeUsize { lo: 1, hi: 2 },
+        &RangeUsize::new(1, 2),
     ) {
         1 => get_prompts(&Lang::ZH),
         2 => get_prompts(&Lang::EN),
@@ -36,7 +38,7 @@ fn main() {
     // Perform user actions
     loop {
         println!("{}", prompts.action_list);
-        match read_selection(
+        match read::read_selection(
             prompts.action_selection,
             prompts.invalid_literal,
             prompts.action_literal,
@@ -54,7 +56,7 @@ fn main() {
             2 => match user.fetch_message(&mut imap_cli, prompts) {
                 Ok(message_body) => match message_body {
                     None => {}
-                    Some(body) => print_body(body, prompts),
+                    Some(body) => read::print_body(body, prompts),
                 },
                 Err(e) => println!("{}{:?}", prompts.fetch_message_fail, e),
             },
@@ -70,5 +72,5 @@ fn main() {
     }
 
     // Wait for user to exit
-    let _ = read_input(prompts.eua_exit);
+    let _ = read::read_input(prompts.eua_exit);
 }
